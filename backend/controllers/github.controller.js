@@ -51,18 +51,25 @@ export async function listRepos(req, res, next) {
  * GET /api/github/projects/:projectId/tree
  * Full recursive file tree for the project's repository, rendered as the
  * VS Code-style explorer in the Repository view. Shows the deploymate branch
- * when it exists, otherwise the project's source branch.
+ * when it exists, otherwise the project's source branch. Works without OAuth
+ * for public repositories (anonymous GitHub API); private repositories get a
+ * clear "connect GitHub" response instead of fabricated data.
  */
 export async function getProjectFiles(req, res, next) {
   try {
-    if (!hasGithub(req)) {
-      return res.status(401).json({ error: "Connect GitHub to browse repository files." });
-    }
     const project = await requireOwnedProject(req.user._id, req.params.projectId);
-    const branch = await resolveBrowseBranch(req.user.accessToken, project);
-    const tree = await getRepoTree(req.user.accessToken, project.repoOwner, project.repoName, branch);
+    const token = hasGithub(req) ? req.user.accessToken : null;
+    const branch = token ? await resolveBrowseBranch(token, project) : (project.branch || project.defaultBranch || "main");
+    const tree = await getRepoTree(token, project.repoOwner, project.repoName, branch);
     res.json(tree);
   } catch (error) {
+    if (!hasGithub(req) && [401, 403, 404].includes(error.status)) {
+      return res.status(401).json({
+        error: "Connect GitHub to browse repository files.",
+        private: error.status === 404,
+        rateLimited: error.status === 403,
+      });
+    }
     next(error);
   }
 }
@@ -73,20 +80,19 @@ export async function getProjectFiles(req, res, next) {
  */
 export async function getProjectFileContent(req, res, next) {
   try {
-    if (!hasGithub(req)) {
-      return res.status(401).json({ error: "Connect GitHub to browse repository files." });
-    }
     const project = await requireOwnedProject(req.user._id, req.params.projectId);
-    const branch = await resolveBrowseBranch(req.user.accessToken, project);
-    const file = await getRepoFile(
-      req.user.accessToken,
-      project.repoOwner,
-      project.repoName,
-      req.query.path ?? "",
-      branch
-    );
+    const token = hasGithub(req) ? req.user.accessToken : null;
+    const branch = token ? await resolveBrowseBranch(token, project) : (project.branch || project.defaultBranch || "main");
+    const file = await getRepoFile(token, project.repoOwner, project.repoName, req.query.path ?? "", branch);
     res.json(file);
   } catch (error) {
+    if (!hasGithub(req) && [401, 403, 404].includes(error.status)) {
+      return res.status(401).json({
+        error: "Connect GitHub to browse repository files.",
+        private: error.status === 404,
+        rateLimited: error.status === 403,
+      });
+    }
     next(error);
   }
 }

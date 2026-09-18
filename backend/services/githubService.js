@@ -6,20 +6,27 @@
 
 const GITHUB_API = "https://api.github.com";
 
+/**
+ * GitHub REST request. `accessToken` is optional: when null the request goes
+ * out anonymously, which GitHub allows for public repositories (rate-limited).
+ * This lets the file tree of a linked public repo be browsed without OAuth.
+ */
 async function githubFetch(path, accessToken, options = {}) {
+  const headers = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "DeployMate-Studio",
+    ...options.headers,
+  };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
   const response = await fetch(`${GITHUB_API}${path}`, {
     ...options,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: "application/vnd.github+json",
-      "User-Agent": "DeployMate-Studio",
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
     const error = new Error(`GitHub request failed (${response.status})`);
-    error.status = response.status === 404 ? 404 : 502;
+    error.status = [401, 403, 404].includes(response.status) ? response.status : 502;
     throw error;
   }
   return response.json();
@@ -198,32 +205,21 @@ export async function getRepoTree(accessToken, owner, name, branch = "main") {
 export async function getRepoFile(accessToken, owner, name, path, branch = "main") {
   const encodedPath = encodeURIComponent(path);
   const ref = encodeURIComponent(branch || "main");
-  const response = await fetch(
-    `${GITHUB_API}/repos/${owner}/${name}/contents/${encodedPath}?ref=${ref}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/vnd.github+json",
-        "User-Agent": "DeployMate-Studio",
-      },
-    }
-  );
-
-  if (!response.ok) {
-    if (response.status === 404) return { path, content: null, reason: "not_found" };
-    const error = new Error(`GitHub request failed (${response.status})`);
-    error.status = response.status === 503 ? 502 : response.status;
+  let response;
+  try {
+    response = await githubFetch(`/repos/${owner}/${name}/contents/${encodedPath}?ref=${ref}`, accessToken);
+  } catch (error) {
+    if (error.status === 404) return { path, content: null, reason: "not_found" };
     throw error;
   }
 
-  const data = await response.json();
-  if (data.type !== "file") {
+  if (response.type !== "file") {
     return { path, content: null, reason: "not_a_file" };
   }
-  if (data.encoding === "base64" && data.content) {
+  if (response.encoding === "base64" && response.content) {
     try {
-      const content = Buffer.from(data.content, "base64").toString("utf8");
-      return { path, content, size: data.size, encoding: data.encoding };
+      const content = Buffer.from(response.content, "base64").toString("utf8");
+      return { path, content, size: response.size, encoding: response.encoding };
     } catch {
       return { path, content: null, reason: "binary" };
     }

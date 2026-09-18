@@ -7,6 +7,7 @@ import {
   Folder,
   FolderOpen,
   FolderTree,
+  Github,
   GitBranch,
   Play,
   RefreshCw,
@@ -17,8 +18,7 @@ import { useMemo, useState } from "react";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingState } from "../components/ui/LoadingState";
-import { sampleFiles } from "../data/sampleFiles";
-import { analyzeProject, getRepoFile, getRepoTree } from "../services/api";
+import { analyzeProject, getRepoFile, getRepoTree, loginWithGitHub } from "../services/api";
 import { useDeployMateStore } from "../store/useDeployMateStore";
 
 function languageOf(name) {
@@ -101,13 +101,19 @@ export default function RepositoryView({ project, projectId, analysis }) {
   });
 
   const { tree, source } = useMemo(() => {
+    // The explorer always reflects the linked repository: GitHub's tree when
+    // reachable, or files captured by a real analysis run. A different repo's
+    // sample files are never substituted for the user's repository.
     const paths = treeQuery.data?.paths ?? [];
     if (paths.length > 0) {
       return { tree: buildTree(paths), source: "github" };
     }
     const raw = Object.entries(analysis?.rawFiles ?? {}).filter(([, c]) => typeof c === "string");
-    const files = raw.length > 0 ? raw.map(([path]) => ({ path, type: "blob" })) : Object.keys(sampleFiles).map((path) => ({ path, type: "blob" }));
-    return { tree: buildTree(files), source: "fallback" };
+    const files = raw.length > 0 ? raw.map(([path]) => ({ path, type: "blob" })) : [];
+    if (files.length > 0) {
+      return { tree: buildTree(files), source: "analysis" };
+    }
+    return { tree: buildTree([]), source: "none" };
   }, [treeQuery.data, analysis]);
 
   const githubAvailable = source === "github";
@@ -128,16 +134,19 @@ export default function RepositoryView({ project, projectId, analysis }) {
       {/* Explorer */}
       <aside className="studio-scrollbar hidden min-h-0 flex-col border-r border-studio-line bg-studio-panel md:flex">
         <div className="flex h-9 shrink-0 items-center gap-2 border-b border-studio-line px-3 text-[11px] font-medium text-studio-faint">
-          <FolderTree className="h-3.5 w-3.5" aria-hidden="true" />
-          <span className="uppercase">Explorer</span>
-          {!githubAvailable ? (
-            <span className="ml-auto text-[10px] normal-case text-studio-faint">key files</span>
+          <FolderTree className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span className="shrink-0 uppercase">Explorer</span>
+          <span className="min-w-0 flex-1 truncate font-mono text-[10px] font-normal normal-case text-studio-muted" title={`${project?.repoOwner}/${project?.repoName}`}>
+            {project?.repoOwner}/{project?.repoName}
+          </span>
+          {source === "analysis" ? (
+            <span className="shrink-0 text-[10px] font-normal normal-case text-studio-faint">from analysis</span>
           ) : null}
           <button
             type="button"
             aria-label="Refresh tree"
             onClick={() => queryClient.invalidateQueries({ queryKey: ["repo-tree", projectId] })}
-            className="ml-auto text-studio-faint hover:text-studio-text"
+            className="shrink-0 text-studio-faint hover:text-studio-text"
             title="Refresh repository tree"
           >
             <RefreshCw className={`h-3 w-3 ${treeQuery.isPending ? "animate-spin" : ""}`} aria-hidden="true" />
@@ -146,6 +155,18 @@ export default function RepositoryView({ project, projectId, analysis }) {
 
         {treeQuery.isPending ? (
           <p className="px-3 py-8 text-center text-xs text-studio-faint">Loading files…</p>
+        ) : source === "none" || treeQuery.isError ? (
+          <div className="flex-1 p-3">
+            <p className="text-xs leading-5 text-studio-muted">
+              {treeQuery.isError
+                ? treeQuery.error?.message
+                : `Connect GitHub to browse ${project?.repoOwner}/${project?.repoName}.`}
+            </p>
+            <Button size="xs" variant="secondary" className="mt-2 w-full" onClick={loginWithGitHub}>
+              <Github className="h-3 w-3" aria-hidden="true" />
+              Connect GitHub
+            </Button>
+          </div>
         ) : (
           <TreeExplorer
             key={githubAvailable ? "github" : "fallback"}
@@ -200,7 +221,26 @@ export default function RepositoryView({ project, projectId, analysis }) {
             </div>
           </div>
 
-          <EditorPane activeFile={activeFile} file={fileQuery.data} loading={fileQuery.isPending} analysisLoading={analyzeMutation.isPending && !analysis} />
+          {source === "none" ? (
+            <div className="flex h-full items-center justify-center p-6">
+              <div className="max-w-sm text-center">
+                <Github className="mx-auto h-8 w-8 text-studio-faint" aria-hidden="true" />
+                <p className="mt-3 truncate font-mono text-sm font-medium text-studio-text">
+                  {project?.repoOwner}/{project?.repoName}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-studio-muted">
+                  This repository is not reachable without a GitHub connection. Link your GitHub account to browse and
+                  analyze its files.
+                </p>
+                <Button size="sm" variant="primary" className="mt-4" onClick={loginWithGitHub}>
+                  <Github className="h-3.5 w-3.5" aria-hidden="true" />
+                  Connect GitHub
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <EditorPane activeFile={activeFile} file={fileQuery.data} loading={fileQuery.isPending} analysisLoading={analyzeMutation.isPending && !analysis} />
+          )}
         </div>
 
         {/* AI insight */}
@@ -248,6 +288,7 @@ export default function RepositoryView({ project, projectId, analysis }) {
             )}
           </div>
         </aside>
+        )}
       </div>
     </div>
   );
@@ -270,6 +311,13 @@ function EditorPane({ activeFile, file, loading, analysisLoading }) {
     );
   } else if (loading) {
     body = <LoadingState title={`Opening ${activeFile}…`} />;
+  } else if (!activeFile) {
+    body = (
+      <EmptyState
+        title="Select a file"
+        description="Pick a file from the explorer to preview its contents."
+      />
+    );
   } else if (file?.content == null) {
     body = (
       <EmptyState
