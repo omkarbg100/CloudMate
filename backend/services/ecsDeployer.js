@@ -10,9 +10,9 @@
  * with every stage streamed over WebSocket via the `log` callback.
  */
 
-import { createWriteStream } from "node:fs";
+import { createReadStream, createWriteStream } from "node:fs";
 import { mkdir, rm } from "node:fs/promises";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -97,6 +97,7 @@ export async function deployToEcs({ deployment, project, connection, githubToken
 
   const workspace = path.join(os.tmpdir(), "deploymate", `${project.projectId}-${Date.now()}`);
   await mkdir(workspace, { recursive: true });
+  let contextBundle = path.join(os.tmpdir(), "deploymate", `ctx-${project.projectId}-${Date.now()}.tar.gz`);
 
   try {
     const credentials = {
@@ -151,11 +152,14 @@ export async function deployToEcs({ deployment, project, connection, githubToken
 
     // 3) Build + push.
     log("info", "Building container image…", "BUILD", 45);
-    await run("docker", ["build", "-t", imageTag, workspace], { timeout: 15 * 60_000 });
+    // Docker-outside-of-Docker: the host daemon cannot read the container's
+    // filesystem, so stream the extracted workspace as a tarball over stdin.
+    await run("tar", ["-czf", contextBundle, "-C", workspace, "."], { timeout: 5 * 60_000 });
+    await buildFromTarball(imageTag, contextBundle);
     log("success", `Image built: ${imageTag}`, "BUILD", 60);
 
     log("info", "Pushing image to ECR…", "PUSH", 70);
-    const pushOut = await run("docker", ["push", imageTag], { timeout: 15 * 60_000 });
+    const pushOut = await run("docker", ["push", imageTag], { timeout: 15 * 60_000, maxBuffer: 8 * 1024 * 1024 });
     log("success", `Pushed image to ECR (${pushOut.stdout.trim().split("\n").slice(-2).join(" ")}).`, "PUSH", 80);
 
     // 4) Task definition.
@@ -250,7 +254,28 @@ export async function deployToEcs({ deployment, project, connection, githubToken
     };
   } finally {
     await rm(workspace, { recursive: true, force: true }).catch(() => {});
+    await rm(contextBundle, { force: true }).catch(() => {});
   }
+}
+
+/**
+ * docker build -t <tag> -  reading the (gzipped) context tarball from stdin.
+ * Works through the mounted host socket without the daemon seeing the
+ * container's filesystem; captures real build output, fails on nonzero exit.
+ */
+function buildFromTarball(tag, bundlePath) {
+  return new Promise((resolve, reject) => {
+    let output = "";
+    const child = spawn("docker", ["build", "-t", tag, "-"], { stdio: ["pipe", "pipe", "pipe"] });
+    child.stdout.on("data", (chunk) => { output += chunk; });
+    child.stderr.on("data", (chunk) => { output += chunk; });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) return resolve({ stdout: output });
+      reject(new Error(`docker build failed (exit ${code}): ${output.slice(-1500)}`));
+    });
+    createReadStream(bundlePath).pipe(child.stdin);
+  });
 }
 
 async function findService(ecs, clusterName, serviceName) {

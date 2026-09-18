@@ -64,6 +64,12 @@ services:
       DEV_DEMO_MODE: "${DEV_DEMO_MODE:-true}"
       # MONGODB_URI and JWT_SECRET are intentionally NOT set here so the values
       # from backend/.env (cloud MongoDB, real JWT secret) are used as-is.
+    volumes:
+      # Docker-outside-of-Docker: the backend uses the host daemon to build and
+      # push real images (ECR) during approved deployments. Build contexts are
+      # streamed over stdin, so the host daemon never needs to read the
+      # container's filesystem. Requires Docker to expose a Unix socket here.
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       ai-engine:
         condition: service_started
