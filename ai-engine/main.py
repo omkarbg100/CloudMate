@@ -1,8 +1,12 @@
+import time
+import traceback
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request
+from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from agents.orchestrator import OrchestratorAgent
@@ -14,9 +18,9 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    print("[deploymate] AI Engine (LangChain + LangGraph) starting up")
+    print("[ai-engine] AI Engine (LangChain + LangGraph) starting up")
     yield
-    print("[deploymate] AI Engine shutting down")
+    print("[ai-engine] AI Engine shutting down")
 
 
 app = FastAPI(title="DeployMate AI Engine", version="0.3.0", lifespan=lifespan)
@@ -28,6 +32,36 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Print every API call with method, path, status and duration (no bodies)."""
+    started = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - started) * 1000
+    print(
+        f"[ai-engine] {request.method} {request.url.path} -> {response.status_code} ({duration_ms:.1f}ms)"
+    )
+    return response
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_logger(request: Request, exc: HTTPException):
+    """Print handled HTTP errors (e.g. 400 unknown action)."""
+    print(
+        f"[ai-engine] HTTP {exc.status_code} on {request.method} {request.url.path}: {exc.detail}"
+    )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_logger(request: Request, exc: Exception):
+    """Print any uncaught error with its traceback, then return 500."""
+    print(f"[ai-engine] ERROR on {request.method} {request.url.path}: {exc}")
+    traceback.print_exc()
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
 
 orchestrator = OrchestratorAgent()
 

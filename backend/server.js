@@ -7,6 +7,7 @@ import { connectDB } from "./utils/db.js";
 import { attachProjectWebSocket } from "./websocket/projectSocket.js";
 import apiRoutes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { httpLogger } from "./middleware/httpLogger.js";
 
 const app = express();
 const port = Number(process.env.BACKEND_PORT ?? process.env.PORT ?? 4000);
@@ -19,6 +20,7 @@ connectDB();
 app.use(cors({ origin: frontendOrigin, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser());
+app.use(httpLogger);
 
 // Routes
 app.use("/api", apiRoutes);
