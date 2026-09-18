@@ -27,11 +27,13 @@ async function githubFetch(path, accessToken, options = {}) {
 
 export async function listUserRepos(accessToken) {
   const repos = await githubFetch("/user/repos?per_page=100&sort=updated", accessToken);
+  // Same shape the GitHub API exposes, so callers can rely on full_name and
+  // owner.login (the frontend picks repos by these fields).
   return repos.map((repo) => ({
     id: repo.id,
     name: repo.name,
-    fullName: repo.full_name,
-    owner: repo.owner?.login,
+    full_name: repo.full_name,
+    owner: { login: repo.owner?.login },
     defaultBranch: repo.default_branch ?? "main",
     private: repo.private,
     language: repo.language,
