@@ -1,18 +1,9 @@
 import { Bell, ChevronRight, CloudCog, GitBranch, Boxes } from "lucide-react";
 import { useDeployMateStore } from "../../store/useDeployMateStore";
-import { Segmented } from "../ui/Tabs";
 import { ConnectionDot } from "../ui/Badge";
-
-const ENVIRONMENTS = [
-  { value: "development", label: "Development" },
-  { value: "staging", label: "Staging" },
-  { value: "production", label: "Production" },
-];
 
 export function TopBar({ project, awsConnections, githubAvailable, unreadEvents }) {
   const activeView = useDeployMateStore((state) => state.activeView);
-  const environment = useDeployMateStore((state) => state.environment);
-  const setEnvironment = useDeployMateStore((state) => state.setEnvironment);
   const setActiveView = useDeployMateStore((state) => state.setActiveView);
   const user = useDeployMateStore((state) => state.user);
 
@@ -40,9 +31,6 @@ export function TopBar({ project, awsConnections, githubAvailable, unreadEvents 
         <ChevronRight className="h-3.5 w-3.5 text-studio-faint" aria-hidden="true" />
         <span className="capitalize text-studio-faint">{activeView}</span>
       </nav>
-
-      {/* Environment selector */}
-      <Segmented options={ENVIRONMENTS} value={environment} onChange={setEnvironment} />
 
       {/* AWS */}
       <button

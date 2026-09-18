@@ -60,7 +60,6 @@ const BOTTOM = [
 export function Sidebar({ projects, awsConnections, githubAvailable, hasIncidents, securityFindings = 0, isLoading }) {
   const activeView = useDeployMateStore((state) => state.activeView);
   const setActiveView = useDeployMateStore((state) => state.setActiveView);
-  const environment = useDeployMateStore((state) => state.environment);
   const user = useDeployMateStore((state) => state.user);
   const setUser = useDeployMateStore((state) => state.setUser);
 
@@ -166,7 +165,6 @@ export function Sidebar({ projects, awsConnections, githubAvailable, hasIncident
         >
           <Settings className="h-3.5 w-3.5 shrink-0 text-studio-faint" aria-hidden="true" />
           <span className="flex-1">Settings</span>
-          {environment ? <span className="text-[10px] uppercase text-studio-faint">{environment}</span> : null}
         </button>
 
         <div className="mt-2 flex items-center gap-2 rounded border-t border-studio-line pt-2">

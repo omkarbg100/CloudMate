@@ -10,12 +10,10 @@ export const useDeployMateStore = create((set) => ({
   selectedProjectId: "",
   activeView: "overview",
   activeFile: "backend/server.js",
-  environment: "production",
   activeLogTab: "live",
   setSelectedProjectId: (projectId) => set({ selectedProjectId: projectId }),
   setActiveView: (view) => set({ activeView: view }),
   setActiveFile: (file) => set({ activeFile: file }),
-  setEnvironment: (environment) => set({ environment }),
   setActiveLogTab: (activeLogTab) => set({ activeLogTab }),
 
   // Transient review artefacts (proposals the AI produced this session).
