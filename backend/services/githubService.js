@@ -49,6 +49,105 @@ export async function verifyRepo(accessToken, owner, name) {
   };
 }
 
+export async function getRepoBranches(accessToken, owner, name) {
+  const branches = await githubFetch(`/repos/${owner}/${name}/branches?per_page=100`, accessToken);
+  return branches.map((branch) => branch.name);
+}
+
+/** Latest commit SHA of a branch, or null when the branch does not exist. */
+export async function getBranchRefSha(accessToken, owner, name, branch) {
+  const ref = encodeURIComponent(branch);
+  const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/git/ref/${ref}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/vnd.github+json",
+      "User-Agent": "DeployMate-Studio",
+    },
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    const error = new Error(`GitHub request failed (${response.status})`);
+    error.status = 502;
+    throw error;
+  }
+  const data = await response.json();
+  return data.object?.sha ?? null;
+}
+
+/** Creates a branch ref pointing at an existing commit SHA. Returns { created, sha }. */
+export async function createBranchRef(accessToken, owner, name, branch, fromSha) {
+  const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/git/refs`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/vnd.github+json",
+      "User-Agent": "DeployMate-Studio",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: fromSha }),
+  });
+  if (response.status === 201) {
+    const data = await response.json();
+    return { created: true, sha: data.object?.sha ?? fromSha };
+  }
+  if (response.status === 422) {
+    // Branch already exists — treat as success with its current head.
+    const existing = await getBranchRefSha(accessToken, owner, name, branch);
+    return { created: false, sha: existing ?? fromSha };
+  }
+  const error = new Error(`GitHub branch creation failed (${response.status})`);
+  error.status = 502;
+  throw error;
+}
+
+/**
+ * Ensures a branch exists, branched off a source branch when newly created.
+ * Never touches the default branch after creation.
+ */
+export async function ensureBranch(accessToken, owner, name, branch, fromBranch = "main") {
+  const existingSha = await getBranchRefSha(accessToken, owner, name, branch);
+  if (existingSha) {
+    return { branch, sha: existingSha, created: false };
+  }
+  const fromSha = await getBranchRefSha(accessToken, owner, name, fromBranch);
+  if (!fromSha) {
+    const error = new Error(`Source branch "${fromBranch}" does not exist in the repository.`);
+    error.status = 400;
+    throw error;
+  }
+  const created = await createBranchRef(accessToken, owner, name, branch, fromSha);
+  return { branch, sha: created.sha, created: true };
+}
+
+/**
+ * Opens a pull request (head -> base). Used to surface the deploymate branch
+ * against the project's default branch.
+ */
+export async function createPullRequest(accessToken, owner, name, { head, base, title, body }) {
+  const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/pulls`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/vnd.github+json",
+      "User-Agent": "DeployMate-Studio",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      head,
+      base,
+      title: title?.trim() || `DeployMate: changes on ${head}`,
+      body: body?.trim() || "Automated proposal from DeployMate Studio.",
+    }),
+  });
+  if (!response.ok) {
+    const error = new Error(`GitHub pull request failed (${response.status})`);
+    error.status = response.status === 422 ? 400 : 502;
+    throw error;
+  }
+  const data = await response.json();
+  return { number: data.number, url: data.html_url, title: data.title, state: data.state, head: data.head?.ref, base: data.base?.ref };
+}
+
 const NOISE_DIRS = new Set([
   ".git",
   "node_modules",

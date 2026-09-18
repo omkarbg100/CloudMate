@@ -64,7 +64,7 @@ export default function SettingsView({ user, awsConnections }) {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-studio-text">AWS</p>
-                  <p className="text-[11px] text-studio-faint">Role-based access via STS</p>
+                  <p className="text-[11px] text-studio-faint">IAM user credentials encrypted at rest (AES-256-GCM)</p>
                 </div>
                 {awsConnections.length > 0 ? (
                   <Badge tone="success">{awsConnections.length} connection{awsConnections.length > 1 ? "s" : ""}</Badge>
@@ -81,8 +81,8 @@ export default function SettingsView({ user, awsConnections }) {
             <div className="px-4 py-3">
               <p className="flex items-start gap-2 text-xs leading-5 text-studio-muted">
                 <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-studio-accent" aria-hidden="true" />
-                DeployMate never stores AWS access keys. IAM Role ARNs and External IDs are encrypted at rest and only
-                assumed when you approve an action.
+                AWS secret access keys are encrypted at rest (AES-256-GCM), never exposed to the browser or logs, and
+                validated with STS before any deployment. The AI engine never receives credentials.
               </p>
             </div>
           </Panel>

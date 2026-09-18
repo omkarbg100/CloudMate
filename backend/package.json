@@ -5,9 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node tests/secretScanner.test.mjs && node tests/awsCrypto.test.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.699.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.699.0",
+    "@aws-sdk/client-ec2": "^3.699.0",
+    "@aws-sdk/client-ecr": "^3.699.0",
+    "@aws-sdk/client-ecs": "^3.699.0",
+    "@aws-sdk/client-sts": "^3.699.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

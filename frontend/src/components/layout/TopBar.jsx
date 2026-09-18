@@ -16,7 +16,11 @@ export function TopBar({ project, awsConnections, githubAvailable, unreadEvents 
   const setActiveView = useDeployMateStore((state) => state.setActiveView);
   const user = useDeployMateStore((state) => state.user);
 
-  const awsConnection = awsConnections.find((c) => c.status === "connected") ?? awsConnections[0];
+  const awsConnection =
+    awsConnections.find((c) => c.connectionId === project?.awsConnectionId) ??
+    (project ? awsConnections.find((c) => c.projectId === project.projectId) : undefined) ??
+    awsConnections.find((c) => c.status === "connected") ??
+    null;
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-b border-studio-line bg-studio-panel px-4">
@@ -45,12 +49,12 @@ export function TopBar({ project, awsConnections, githubAvailable, unreadEvents 
         type="button"
         onClick={() => setActiveView("aws")}
         className="flex h-7 items-center gap-1.5 rounded-md border border-studio-line px-2 text-[11px] text-studio-muted hover:border-studio-faint"
-        title={awsConnection?.roleArn ?? "No AWS account connected"}
+        title={awsConnection?.accountId ?? awsConnection?.identityArn ?? "No AWS account connected"}
       >
         <CloudCog className="h-3.5 w-3.5 text-studio-faint" aria-hidden="true" />
-        <ConnectionDot connected={awsConnection?.status !== "failed"} />
+        <ConnectionDot connected={awsConnection?.status === "connected"} />
         <span className="font-mono">
-          {awsConnection?.accountId ?? awsConnection?.status === "failed" ? "AWS" : awsConnection?.region ?? "AWS"}
+          {awsConnection?.accountId ?? awsConnection?.region ?? "AWS"}
         </span>
       </button>
 

@@ -65,6 +65,14 @@ export function getRepoFile(projectId, path) {
   return request(`/github/projects/${projectId}/file?path=${encodeURIComponent(path)}`);
 }
 
+export function getRepoBranches(projectId) {
+  return request(`/github/projects/${projectId}/branches`);
+}
+
+export function ensureDeploymateBranch(projectId) {
+  return request(`/github/projects/${projectId}/branch`, { method: "POST" });
+}
+
 export function commitRepoFile(projectId, { file, content, message }) {
   return request(`/github/projects/${projectId}/commit`, {
     method: "POST",
@@ -182,6 +190,26 @@ export function getAwsConnections() {
   return request("/aws/connections");
 }
 
-export function createAwsConnection(input) {
-  return request("/aws/connections", { method: "POST", body: JSON.stringify(input) });
+export function connectAwsAccount(input) {
+  return request("/aws/connect", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function getAwsStatus(projectId) {
+  return request(`/aws/status?projectId=${encodeURIComponent(projectId)}`);
+}
+
+export function testAwsConnection(projectId) {
+  return request("/aws/test", { method: "POST", body: JSON.stringify({ projectId }) });
+}
+
+export function discoverProjectAws(projectId) {
+  return request("/aws/discover", { method: "POST", body: JSON.stringify({ projectId }) });
+}
+
+export function getAwsResources(projectId) {
+  return request(`/aws/resources?projectId=${encodeURIComponent(projectId)}`);
+}
+
+export function disconnectAwsAccount(projectId) {
+  return request("/aws/disconnect", { method: "DELETE", body: JSON.stringify({ projectId }) });
 }

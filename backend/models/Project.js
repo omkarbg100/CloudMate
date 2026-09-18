@@ -8,6 +8,11 @@ const projectSchema = new mongoose.Schema(
     repoOwner: { type: String, required: true },
     repoName: { type: String, required: true },
     branch: { type: String, default: "main" },
+    // GitHub branch the DeployMate coding agent operates on. AI proposals are
+    // always committed HERE (src of truth: deploymate), never to main/master.
+    defaultBranch: { type: String, default: "main" },
+    deploymateBranch: { type: String, default: "deploymate" },
+    lastCommitSha: { type: String, default: null },
     status: {
       type: String,
       enum: ["connected", "analyzing", "analyzed", "awaiting_approval", "deploying", "deployed", "failed"],

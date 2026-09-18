@@ -8,7 +8,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from tools.aws import get_cloudwatch_logs
 from tools.llm import call_llm_json
 from utils.prompts import MONITORING_SYSTEM_PROMPT
 from utils.schemas import ProcessRequest
@@ -60,8 +59,23 @@ class MonitoringAgent:
         project_id = request.projectId or ""
         context = request.context or {}
 
-        # Get logs (from context or stub)
-        logs = context.get("logs") or get_cloudwatch_logs(f"/aws/apprunner/{project_id}")
+        # Get logs from backend-provided context only (real CloudWatch Logs).
+        logs = context.get("logs")
+        if not logs:
+            return {
+                "status": "not_available",
+                "detectedPatterns": [],
+                "diagnosis": {
+                    "rootCause": None,
+                    "severity": "low",
+                    "explanation": (
+                        "No live logs were provided. DeployMate streams real CloudWatch Logs "
+                        "from the backend; the AI engine does not fabricate log lines."
+                    ),
+                    "suggestedFix": None,
+                },
+                "logs": [],
+            }
         log_text = "\n".join(entry.get("message", "") for entry in logs)
 
         # Rule-based pattern matching

@@ -1,50 +1,42 @@
-"""AWS Discovery Agent — discovers permitted AWS resources through STS temporary credentials."""
+"""AWS Discovery Agent — relay for backend-run discovery results (safe only).
+
+Real AWS discovery is executed by the DeployMate Node backend using STS
+validated, project-scoped IAM user credentials. This agent never receives AWS
+credentials; it only consumes the *safe* discovery payload the backend produced
+and normalizes it for the graph. When no payload is provided it returns an
+explicit NOT_IMPLEMENTED result instead of fabricating resources.
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
-from tools.aws import create_assume_role_action, create_discovery_actions
-
 
 class AwsDiscoveryAgent:
-    """Discovers reusable AWS resources without permanent credentials."""
+    """Normalizes backend discovery results; never invokes AWS itself."""
 
-    def discover(
-        self,
-        connection_id: str,
-        role_arn: str,
-        external_id: str,
-        region: str = "ap-south-1",
-        services: list[str] | None = None,
-    ) -> dict[str, Any]:
+    def summarize(self, discovery: dict[str, Any] | None) -> dict[str, Any]:
+        if not discovery:
+            return {
+                "status": "not_implemented",
+                "reason": (
+                    "Real AWS discovery runs in the DeployMate backend (STS-validated, "
+                    "project-scoped credentials). Provide the safe discovery payload that "
+                    "the backend produced; the AI engine never receives AWS credentials."
+                ),
+                "region": None,
+                "resources": [],
+                "errors": [],
+            }
+
+        resources = discovery.get("resources", [])
+        errors = discovery.get("errors", [])
         return {
-            "connectionId": connection_id,
-            "region": region,
-            "credentialStrategy": create_assume_role_action(
-                role_arn=role_arn,
-                external_id=external_id,
-                region=region,
-            ),
-            "discoveryActions": create_discovery_actions(services or []),
-            "resources": [
-                {
-                    "id": "ecr_api_existing",
-                    "service": "ECR",
-                    "name": "deploymate-api",
-                    "region": region,
-                    "summary": "Existing container repository suitable for backend images.",
-                    "reusable": True,
-                    "riskLevel": "low",
-                },
-                {
-                    "id": "cw_app_logs",
-                    "service": "CloudWatch",
-                    "name": "/aws/apprunner/deploymate-api",
-                    "region": region,
-                    "summary": "Existing log group can be reused and extended with alarms.",
-                    "reusable": True,
-                    "riskLevel": "low",
-                },
-            ],
+            "status": "ok" if resources or not errors else "empty",
+            "scannedAt": discovery.get("scannedAt"),
+            "region": discovery.get("region"),
+            "resourceCount": len(resources),
+            "resources": resources,
+            "errors": errors,
+            "note": "Discovery results are authoritative from the DeployMate backend.",
         }

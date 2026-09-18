@@ -274,7 +274,7 @@ function recommend({ project, analysis, architecture, security, validation, depl
   if (!awsConnected) {
     return {
       title: "Connect your AWS account to continue.",
-      description: "DeployMate assumes an IAM role with an external ID — permanent access keys are never stored.",
+      description: "Connect IAM user access keys for this project. The secret key is encrypted at rest (AES-256-GCM) and validated with STS before saving.",
       done: analysis ? ["Repository analyzed"] : [],
       issues: [],
       primary: { label: "Connect AWS", to: "aws" },

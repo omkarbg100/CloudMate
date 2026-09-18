@@ -176,13 +176,14 @@ def repository_node(state: dict[str, Any]) -> dict[str, Any]:
 # ─── AWS Discovery ────────────────────────────────────────────────────────────
 
 def aws_discovery_node(state: dict[str, Any]) -> dict[str, Any]:
+    """Consume safe discovery results produced by the DeployMate backend.
+
+    The AI engine never receives AWS credentials or calls STS directly.
+    When the backend has not provided a safe payload, the node returns an
+    explicit NOT_IMPLEMENTED result instead of inventing resources.
+    """
     agent = AwsDiscoveryAgent()
-    discovery = agent.discover(
-        connection_id=state.get("awsConnectionId") or "aws_conn_demo",
-        role_arn="arn:aws:iam::123456789012:role/DeployMateDiscoveryRole",
-        external_id="deploymate-demo-external-id",
-        region=(state.get("analysis") or {}).get("region", "ap-south-1") or "ap-south-1",
-    )
+    discovery = agent.summarize(state.get("discovery"))
     return {"discovery": discovery, **_log(state, "aws_discovery_node")}
 
 
@@ -382,7 +383,12 @@ def _compute_guard(plan: dict[str, Any]) -> tuple[str, str]:
 
 
 def deployment_node(state: dict[str, Any]) -> dict[str, Any]:
-    """Execute the approved plan through scoped AWS tool actions (stub executor)."""
+    """Gate the approved plan and hand execution to the Node backend.
+
+    Generates the structured, permission-checkable action spec and produces an
+    execution record. Actual AWS execution (Docker -> ECR -> ECS) runs in the
+    DeployMate backend with real-time progress; the AI engine never fakes it.
+    """
     plan = state.get("plan") or {}
     actions = create_deployment_actions(plan, region=str(plan.get("region", "ap-south-1")))
 

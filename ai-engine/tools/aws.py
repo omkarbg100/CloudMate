@@ -1,10 +1,12 @@
 """
 AWS tool module — scoped, structured actions only.
 
-These tools return structured *action specs* (never free-form shell). The
-LLM never touches AWS directly: agents emit tool calls, and these functions
-perform (or stub for now) the actual operations using STS temporary
-credentials from an assumed IAM role. No permanent access keys are accepted.
+These tools return structured *action specs* (never free-form shell), and
+explicitly refuse to fabricate AWS state. Real AWS operations (STS validation,
+ECR/ECS/CloudWatch discovery, and deployment execution) are performed ONLY by
+the DeployMate Node backend, which holds encrypted, project-scoped IAM
+credentials. The AI engine never receives AWS credentials and never
+short-circuits to invented resources, metrics, or URLs.
 """
 
 from __future__ import annotations
@@ -45,89 +47,11 @@ def _tool_for(resource: str) -> tuple[str | None, str | None]:
     return None, None
 
 
-def create_assume_role_action(role_arn: str, external_id: str, region: str = "ap-south-1") -> dict[str, Any]:
-    """
-    Build the STS AssumeRole action spec used to obtain scoped temporary
-    credentials for a discovery/deployment operation.
-    """
-    return {
-        "tool": "aws.sts.assume_role",
-        "parameters": {
-            "roleArn": role_arn,
-            "roleSessionName": "deploymate-agent",
-            "externalId": external_id,
-            "durationSeconds": 3600,
-        },
-        "region": region,
-        "policyValidationRequired": True,
-    }
-
-
-def create_discovery_actions(services: list[str] | None = None) -> list[dict[str, Any]]:
-    """Build structured discovery action specs for the requested AWS services."""
-    services = services or sorted(VALID_SERVICES)
-    actions = []
-    for service in services:
-        normalized = service.lower().replace(" ", "")
-        if normalized not in VALID_SERVICES:
-            continue
-        actions.append(
-            {
-                "tool": f"aws.{normalized}.describe",
-                "service": normalized,
-                "permission": f"{normalized}:Describe*",
-                "approvalRequired": False,
-            }
-        )
-    return actions
-
-
-def get_resources(service: str, region: str = "ap-south-1") -> list[dict[str, Any]]:
-    """
-    List discovered AWS resources of a given service type.
-    Stub — replace with boto3 calls scoped to STS temporary credentials.
-    """
-    service = service.lower()
-    if service in {"ecr", "apprunner", "ecs", "lambda", "amplify", "cloudwatch", "rds", "s3"}:
-        return [
-            {
-                "id": f"{service}_deploymate_existing",
-                "service": service.upper(),
-                "name": "deploymate",
-                "region": region,
-                "reusable": True,
-                "riskLevel": "low",
-            }
-        ]
-    return []
-
-
-def describe_service(service: str, resource_id: str, region: str = "ap-south-1") -> dict[str, Any]:
-    """Describe an AWS resource. Stub."""
-    return {"service": service, "id": resource_id, "region": region, "status": "unknown"}
-
-
-def get_cloudwatch_logs(log_group: str, region: str = "ap-south-1", limit: int = 50) -> list[dict[str, Any]]:
-    """Get CloudWatch log events. Stub — replace with boto3 when AWS is configured."""
-    return [
-        {"timestamp": "2026-09-17T15:00:00Z", "message": "Application started"},
-        {"timestamp": "2026-09-17T15:01:00Z", "message": "GET /health 200 4ms"},
-        {"timestamp": "2026-09-17T15:02:00Z", "message": "MongoServerSelectionError: connect ECONNREFUSED"},
-    ][:limit]
-
-
-def get_app_runner_metrics(service_arn: str, region: str = "ap-south-1") -> dict[str, Any]:
-    """Get App Runner service metrics. Stub."""
-    import random
-
-    return {
-        "serviceArn": service_arn,
-        "requestCount": random.randint(100, 500),
-        "errorRate": round(random.uniform(0, 3), 2),
-        "cpuUtilization": round(random.uniform(10, 50), 1),
-        "memoryUtilization": round(random.uniform(20, 60), 1),
-        "p99Latency": random.randint(50, 300),
-    }
+def _not_implemented(what: str) -> NotImplementedError:
+    return NotImplementedError(
+        f"{what} is executed by the DeployMate Node backend, not by the AI engine. "
+        "The AI engine never holds AWS credentials. Use the backend endpoints for real results."
+    )
 
 
 def create_deployment_actions(plan: dict[str, Any], region: str = "ap-south-1") -> list[dict[str, Any]]:
@@ -135,13 +59,11 @@ def create_deployment_actions(plan: dict[str, Any], region: str = "ap-south-1") 
     Convert an approved deployment plan into structured, permission-checkable
     AWS tool actions. The LLM never calls these directly — the Deployment
     Agent emits the plan, the policy node gates it, the approval node gates
-    it again, then this tool executes each action spec.
-
-    Actions follow the plan's create/reuse/modify decisions for each resource.
+    it again, then the Node backend executes the pipeline.
     """
     resources = plan.get("resources") or [d.get("service") for d in plan.get("resourceDecisions", [])]
     if not resources:
-        resources = ["ECR", "App Runner", "Secrets Manager", "CloudWatch"]
+        resources = ["ECR", "ECS", "CloudWatch"]
 
     decisions = {
         _norm(d.get("service", "")): d.get("action", "create")
@@ -166,7 +88,7 @@ def create_deployment_actions(plan: dict[str, Any], region: str = "ap-south-1") 
 
 
 def execute_deployment_actions(actions: list[dict[str, Any]], approved: bool = False) -> dict[str, Any]:
-    """Execute approved action specs. Hard reject when not approved (defense in depth)."""
+    """Refuse to fabricate execution. Hard reject when not approved (defense in depth)."""
     if not approved:
         return {
             "status": "BLOCKED",
@@ -174,21 +96,18 @@ def execute_deployment_actions(actions: list[dict[str, Any]], approved: bool = F
             "results": [],
         }
 
-    results = []
-    for idx, action in enumerate(actions):
-        results.append(
-            {
-                "step": idx + 1,
-                "tool": action["tool"],
-                "action": action["action"],
-                "status": "OK",
-                "message": f"Executed {action['tool']} via scoped STS credentials.",
-            }
-        )
+    # Approved plans are executed by the Node backend (Docker build + ECR push +
+    # ECS rollout streamed over WebSocket). This tool never pretends it ran them.
     return {
-        "status": "DEPLOYED",
-        "deploymentId": "deploy_demo_001",
-        "url": "https://deploymate-demo.ap-south-1.amazonaws.com",
-        "results": results,
-        "message": "Deployment completed using per-step scoped tool actions.",
+        "status": "NOT_IMPLEMENTED",
+        "message": (
+            "Real ECS deployment is executed by the DeployMate Node backend "
+            "(Docker build, ECR push, task definition registration, ECS service "
+            "rollout), with real progress streamed over WebSocket. The AI engine "
+            "cannot perform or fake it."
+        ),
+        "pendingActions": [
+            {"tool": a.get("tool"), "action": a.get("action"), "service": a.get("service")} for a in (actions or [])
+        ],
+        "results": [],
     }
