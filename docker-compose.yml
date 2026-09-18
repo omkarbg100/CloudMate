@@ -1,0 +1,87 @@
+# DeployMate Studio — full stack
+#
+#   docker compose up --build
+#
+# Services talk to each other by service name (no hardcoded localhost):
+#   frontend (nginx :80)  ->  backend (http://backend:4000)
+#   backend               ->  http://ai-engine:8000
+#   ai-engine             ->  (LLM providers / GitHub)
+#
+# MongoDB is cloud-hosted by default: the backend reads MONGODB_URI from
+# backend/.env (git-ignored). To run a throwaway local MongoDB instead, start
+# with the optional profile:
+#   docker compose --profile local-db up --build
+# and point MONGODB_URI at mongodb://mongodb:27017/deploymate.
+#
+# Secrets are read from each component's .env (git-ignored). Copy the examples
+# first if you want to override defaults:
+#   cp backend/.env.example backend/.env
+#   cp ai-engine/.env.example ai-engine/.env
+
+services:
+  # Optional local database — only starts with `--profile local-db`.
+  mongodb:
+    image: mongo:7
+    profiles: ["local-db"]
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-engine:
+    build: ./ai-engine
+    restart: unless-stopped
+    env_file:
+      - path: ./ai-engine/.env
+        required: false
+    environment:
+      AI_ENGINE_PORT: "8000"
+      NODE_BACKEND_URL: http://backend:4000
+      USE_LLM: "${USE_LLM:-false}"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      BACKEND_PORT: "4000"
+      NODE_ENV: production
+      AI_ENGINE_URL: http://ai-engine:8000
+      FRONTEND_ORIGIN: http://localhost:5173
+      DEV_DEMO_MODE: "${DEV_DEMO_MODE:-true}"
+      # MONGODB_URI and JWT_SECRET are intentionally NOT set here so the values
+      # from backend/.env (cloud MongoDB, real JWT secret) are used as-is.
+    depends_on:
+      ai-engine:
+        condition: service_started
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  mongo-data:

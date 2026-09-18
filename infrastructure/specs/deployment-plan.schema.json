@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deploymate.local/schemas/deployment-plan.schema.json",
+  "title": "DeployMateDeploymentPlan",
+  "type": "object",
+  "required": ["version", "projectId", "region", "awsConnectionId", "resourceDecisions", "steps"],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "awsConnectionId": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "requirements": {
+      "type": "object",
+      "properties": {
+        "securityProfile": { "enum": ["demo", "standard", "strict"] },
+        "costProfile": { "enum": ["lowest", "balanced", "scalable"] },
+        "scalingProfile": { "enum": ["small", "variable", "high"] }
+      },
+      "additionalProperties": false
+    },
+    "resourceDecisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/resourceDecision"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "policyValidation": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "resourceDecision": {
+      "type": "object",
+      "required": ["id", "service", "action", "targetName", "reason", "riskLevel", "approvalRequired"],
+      "properties": {
+        "id": { "type": "string" },
+        "service": { "type": "string" },
+        "action": { "enum": ["create", "reuse", "modify"] },
+        "targetName": { "type": "string" },
+        "existingResourceId": { "type": "string" },
+        "reason": { "type": "string" },
+        "riskLevel": { "enum": ["low", "medium", "high"] },
+        "approvalRequired": { "type": "boolean" },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

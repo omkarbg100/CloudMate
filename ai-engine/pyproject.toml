@@ -1,0 +1,36 @@
+[project]
+name = "deploymate-ai-engine"
+version = "0.3.0"
+description = "DeployMate AI engine built on LangChain + LangGraph."
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "pydantic>=2.10,<3",
+  "python-dotenv>=1.0,<2",
+  "httpx>=0.28,<1",
+  "python-multipart>=0.0.12,<1",
+  "PyGithub>=2.4,<3",
+  "docker>=7.1,<8",
+  "boto3>=1.35",
+  "langchain>=1.0,<2",
+  "langchain-core>=1.0,<2",
+  "langchain-google-genai>=2.0,<5",
+  "langchain-groq>=1.0,<2",
+  "langgraph>=1.0,<2",
+  "langgraph-checkpoint>=4.0,<5"
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.8"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.uv]
+managed = true
+package = false
