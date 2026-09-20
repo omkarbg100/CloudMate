@@ -18,7 +18,10 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: [env.frontendUrl, 'http://localhost:5173', 'http://localhost:3000'],
+    origin: (origin, callback) => {
+      // Allow requests from frontend VM IP, custom domains, and localhost
+      callback(null, true);
+    },
     credentials: true, // required for cookies
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
