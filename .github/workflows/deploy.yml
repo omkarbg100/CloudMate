@@ -80,7 +80,13 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          # Normalize PEM key formatting: remove carriage returns, strip surrounding quotes, fix escaped newlines
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' | sed 's|^"||; s|"$||' > ~/.ssh/deploy_key
+          if grep -q '\\n' ~/.ssh/deploy_key; then
+            sed -i 's/\\n/\n/g' ~/.ssh/deploy_key
+          fi
+          # Ensure a trailing newline exists (required by OpenSSH / libcrypto)
+          [ -n "$(tail -c1 ~/.ssh/deploy_key)" ] && echo "" >> ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
           REMOTE_DIR="~/codebase-chat-assistant"
