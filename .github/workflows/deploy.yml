@@ -115,13 +115,34 @@ jobs:
           scp -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key remote.env "$VM_USER@$VM_HOST:$REMOTE_DIR/.env"
           rm -f remote.env
 
-          # Pull images and start containers on the VM
+          # Ensure Docker is installed on the remote VM, then pull images and start containers
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key "$VM_USER@$VM_HOST" "
-            cd $REMOTE_DIR &&
-            docker compose pull &&
-            docker compose up -d --remove-orphans &&
-            docker image prune -f &&
-            docker compose ps
+            set -e
+
+            # Automatically install Docker and Docker Compose if not found
+            if ! command -v docker &> /dev/null; then
+              echo '=== Docker not found on VM. Installing Docker automatically via get.docker.com... ==='
+              curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+              sudo sh /tmp/get-docker.sh
+              sudo usermod -aG docker \$USER || true
+              sudo systemctl enable --now docker || sudo service docker start || true
+              rm -f /tmp/get-docker.sh
+              echo '=== Docker installed successfully! ==='
+            fi
+
+            # Check if docker can run without sudo or if sudo is required for current session
+            if docker info &> /dev/null; then
+              DOCKER_CMD='docker'
+            else
+              DOCKER_CMD='sudo docker'
+            fi
+
+            echo \"Using: \$DOCKER_CMD\"
+            cd $REMOTE_DIR
+            \$DOCKER_CMD compose pull
+            \$DOCKER_CMD compose up -d --remove-orphans
+            \$DOCKER_CMD image prune -f
+            \$DOCKER_CMD compose ps
           "
 
           # Clean up deploy key on runner
