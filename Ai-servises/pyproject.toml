@@ -1,0 +1,33 @@
+[project]
+name = "ai-servises"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "omkar gaikwad", email = "147027748+omkarbg100@users.noreply.github.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "pydantic>=2.10,<3",
+  "python-dotenv>=1.0,<2",
+  "httpx>=0.28,<1",
+  "langchain-core>=0.3,<1",
+  "langchain-google-genai>=2.0,<5",
+  "langchain-groq>=0.3,<1"
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<9", "ruff>=0.8,<1"]
+
+[tool.uv]
+managed = true
+package = false
+
+[project.scripts]
+ai-servises = "ai_servises:main"
+
+[build-system]
+requires = ["uv_build>=0.12.15,<0.13.0"]
+build-backend = "uv_build"

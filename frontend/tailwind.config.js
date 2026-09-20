@@ -1,43 +1,61 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx}"],
+  content: [
+    './index.html',
+    './src/**/*.{js,jsx}',
+  ],
   theme: {
     extend: {
       colors: {
-        // Dark-first developer palette. Near-black base, restrained accents.
-        studio: {
-          bg: "#0a0e14",
-          panel: "#10151d",
-          panel2: "#141b26",
-          inset: "#0c1118",
-          line: "#1d2631",
-          line2: "#2a3544",
-          text: "#e7ebf2",
-          muted: "#8b94a7",
-          faint: "#5d6779",
-          accent: "#4f7cff",
-          accentHi: "#6f96ff",
-          success: "#3ddc97",
-          warning: "#f5b83d",
-          danger: "#f4706e",
-          info: "#5aa7f0",
+        // Primary brand — electric indigo
+        brand: {
+          50:  '#eef2ff',
+          100: '#e0e7ff',
+          200: '#c7d2fe',
+          300: '#a5b4fc',
+          400: '#818cf8',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
         },
+        // Surface grays — near-black dark theme
+        surface: {
+          900: '#0a0a0f',
+          800: '#111118',
+          700: '#1a1a26',
+          600: '#222232',
+          500: '#2d2d42',
+          400: '#3d3d55',
+          300: '#5a5a7a',
+          200: '#8888aa',
+          100: '#b8b8cc',
+        },
+        // Status colors
+        success: '#22c55e',
+        warning: '#f59e0b',
+        danger:  '#ef4444',
+        info:    '#38bdf8',
       },
       fontFamily: {
-        mono: [
-          "JetBrains Mono",
-          "ui-monospace",
-          "SFMono-Regular",
-          "Menlo",
-          "Consolas",
-          "monospace",
-        ],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
-      boxShadow: {
-        modal: "0 16px 48px rgba(0,0,0,0.5)",
-        top: "0 1px 0 rgba(0,0,0,0.5)",
+      borderRadius: {
+        xl2: '1rem',
+        xl3: '1.5rem',
+      },
+      animation: {
+        'fade-in':   'fadeIn 0.2s ease-out',
+        'slide-up':  'slideUp 0.25s ease-out',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        fadeIn:  { from: { opacity: 0 }, to: { opacity: 1 } },
+        slideUp: { from: { opacity: 0, transform: 'translateY(8px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
       },
     },
   },
   plugins: [],
-};
+}

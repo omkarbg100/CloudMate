@@ -1,46 +1,24 @@
-import { Check, Circle, Loader2, Plus, X, Pencil, TriangleAlert } from "lucide-react";
-import { statusLabel, statusTone } from "../../lib/status";
-import { Badge } from "./Badge";
-
-const STAGE_ICONS = {
-  success: Check,
-  warning: TriangleAlert,
-  danger: X,
-  analyzing: Loader2,
-  running: Loader2,
-  deploying: Loader2,
-  generating: Loader2,
-  connecting: Loader2,
-};
-
-export function StatusBadge({ status, children, className = "" }) {
-  const tone = statusTone(status);
-  const Icon = STAGE_ICONS[tone];
-  return (
-    <Badge tone={tone} className={className}>
-      {Icon ? (
-        <Icon
-          className={`h-3 w-3 ${tone === "running" || tone === "analyzing" || tone === "deploying" || tone === "generating" || tone === "connecting" ? "animate-spin" : ""}`}
-          aria-hidden="true"
-        />
-      ) : null}
-      {children ?? statusLabel(status)}
-    </Badge>
-  );
+// Status badge configuration
+const STATUS_CONFIG = {
+  created:                { label: 'Created',               color: 'bg-surface-600 text-surface-100',     dot: 'bg-surface-300' },
+  analyzing:              { label: 'Analyzing',             color: 'bg-amber-500/15 text-amber-400',      dot: 'bg-amber-400 animate-pulse' },
+  analyzed:               { label: 'Analyzed',              color: 'bg-blue-500/15 text-blue-400',        dot: 'bg-blue-400' },
+  architecture_generated: { label: 'Architecture Ready',    color: 'bg-brand-600/15 text-brand-400',     dot: 'bg-brand-400' },
+  deployment_ready:       { label: 'Deployment Ready',      color: 'bg-emerald-500/15 text-emerald-400', dot: 'bg-emerald-400' },
+  deploying:              { label: 'Deploying',             color: 'bg-orange-500/15 text-orange-400',   dot: 'bg-orange-400 animate-pulse' },
+  deployed:               { label: 'Deployed',              color: 'bg-green-500/15 text-green-400',     dot: 'bg-green-400' },
+  failed:                 { label: 'Failed',                color: 'bg-red-500/15 text-red-400',         dot: 'bg-red-400' },
 }
 
-export function DecisionBadge({ decision }) {
-  const map = {
-    create: { label: "CREATE", tone: "info", icon: Plus },
-    reuse: { label: "REUSE", tone: "success", icon: Circle },
-    modify: { label: "MODIFY", tone: "warning", icon: Pencil },
-  };
-  const entry = map[decision] ?? { label: decision, tone: "muted", icon: Circle };
-  const Icon = entry.icon;
+export default function StatusBadge({ status, className = '' }) {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.created
+
   return (
-    <Badge tone={entry.tone}>
-      <Icon className="h-3 w-3" aria-hidden="true" />
-      {entry.label}
-    </Badge>
-  );
+    <span className={`badge ${config.color} ${className}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+      {config.label}
+    </span>
+  )
 }
+
+export { STATUS_CONFIG }

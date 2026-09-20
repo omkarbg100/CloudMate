@@ -1,191 +1,103 @@
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutGrid,
-  Boxes,
-  MessagesSquare,
-  Network,
-  ShieldCheck,
-  FileDiff,
-  ClipboardCheck,
+  LayoutDashboard,
+  FolderGit2,
   Rocket,
-  Terminal,
-  Activity,
-  TriangleAlert,
-  CloudCog,
   Settings,
   LogOut,
-} from "lucide-react";
-import { useDeployMateStore } from "../../store/useDeployMateStore";
-import { logout } from "../../services/api";
-import { ProjectSwitcher } from "./ProjectSwitcher";
-import { ConnectionDot, Dot } from "../ui/Badge";
+  Zap,
+  ChevronRight,
+} from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
-const NAV = [
-  {
-    section: "Workspace",
-    items: [
-      { id: "overview", label: "Overview", icon: LayoutGrid },
-      { id: "repository", label: "Repository", icon: Boxes },
-      { id: "assistant", label: "AI Assistant", icon: MessagesSquare },
-    ],
-  },
-  {
-    section: "Analyze",
-    items: [
-      { id: "architecture", label: "Architecture", icon: Network },
-      { id: "security", label: "Security", icon: ShieldCheck },
-      { id: "changes", label: "Changes", icon: FileDiff },
-      { id: "validation", label: "Validation", icon: ClipboardCheck },
-    ],
-  },
-  {
-    section: "Deploy",
-    items: [
-      { id: "deployment", label: "Deployment", icon: Rocket },
-      { id: "logs", label: "Logs", icon: Terminal },
-    ],
-  },
-  {
-    section: "Operate",
-    items: [
-      { id: "monitoring", label: "Monitoring", icon: Activity },
-      { id: "incidents", label: "Incidents", icon: TriangleAlert },
-    ],
-  },
-];
+const NAV_ITEMS = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/projects', icon: FolderGit2, label: 'Projects' },
+  { to: '/deployments', icon: Rocket, label: 'Deployments', comingSoon: true },
+  { to: '/settings', icon: Settings, label: 'Settings' },
+]
 
-const BOTTOM = [
-  { id: "aws", label: "Settings", icon: Settings },
-];
-
-export function Sidebar({ projects, awsConnections, githubAvailable, hasIncidents, securityFindings = 0, isLoading }) {
-  const activeView = useDeployMateStore((state) => state.activeView);
-  const setActiveView = useDeployMateStore((state) => state.setActiveView);
-  const user = useDeployMateStore((state) => state.user);
-  const setUser = useDeployMateStore((state) => state.setUser);
-
-  const awsConnected = awsConnections.some((c) => c.status !== "failed");
-
-  async function handleSignOut() {
-    await logout().catch(() => {});
-    setUser(null);
+function NavItem({ to, icon: Icon, label, comingSoon }) {
+  if (comingSoon) {
+    return (
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-surface-300 cursor-not-allowed select-none">
+        <Icon size={17} />
+        <span className="text-sm font-medium flex-1">{label}</span>
+        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-600 text-surface-200">Soon</span>
+      </div>
+    )
   }
 
   return (
-    <aside className="studio-scrollbar flex min-h-0 w-60 shrink-0 flex-col overflow-auto border-r border-studio-line bg-studio-panel">
-      {/* Brand */}
-      <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-studio-line px-3">
-        <div className="flex h-7 w-7 items-center justify-center rounded bg-studio-accent text-[11px] font-black text-white">
-          D
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group
+         ${isActive
+           ? 'bg-brand-600/15 text-brand-300 border border-brand-600/25'
+           : 'text-surface-200 hover:bg-surface-700 hover:text-white border border-transparent'
+         }`
+      }
+    >
+      <Icon size={17} />
+      <span className="text-sm font-medium flex-1">{label}</span>
+      <ChevronRight size={13} className="opacity-0 group-hover:opacity-50 transition-opacity" />
+    </NavLink>
+  )
+}
+
+export default function Sidebar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
+
+  const initials = user?.name
+    ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?'
+
+  return (
+    <aside className="w-60 shrink-0 h-screen flex flex-col bg-surface-800 border-r border-surface-600">
+      {/* Logo */}
+      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-surface-600">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
+          <Zap size={16} className="text-white" />
         </div>
-        <div className="min-w-0 leading-tight">
-          <p className="text-[13px] font-semibold text-studio-text">DeployMate Studio</p>
-          <p className="text-[10px] uppercase tracking-wider text-studio-faint">AI DevOps workspace</p>
+        <div>
+          <p className="text-sm font-bold text-white leading-tight">DeployMate</p>
+          <p className="text-[10px] text-surface-300 leading-tight">Studio</p>
         </div>
       </div>
 
-      {/* Project */}
-      <div className="border-b border-studio-line p-3">
-        <ProjectSwitcher projects={projects} />
-      </div>
-
-      {/* Navigation */}
-      <nav className="studio-scrollbar min-h-0 flex-1 overflow-auto py-2">
-        {NAV.map((group) => (
-          <div key={group.section} className="mb-3">
-            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-studio-faint">
-              {group.section}
-            </p>
-            <div className="space-y-px">
-              {group.items.map((item) => {
-                const isActive = activeView === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setActiveView(item.id)}
-                    className={`flex w-full items-center gap-2.5 border-l-2 px-3 py-1.5 text-left text-[13px] transition-colors ${
-                      isActive
-                        ? "border-studio-accent bg-studio-accent/10 text-studio-text"
-                        : "border-transparent text-studio-muted hover:bg-studio-panel2 hover:text-studio-text"
-                    }`}
-                  >
-                    <item.icon
-                      className={`h-4 w-4 shrink-0 ${isActive ? "text-studio-accentHi" : "text-studio-faint"}`}
-                      aria-hidden="true"
-                    />
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {item.id === "incidents" && hasIncidents ? (
-                      <Dot tone="danger" className="h-1.5 w-1.5" />
-                    ) : null}
-                    {item.id === "security" && securityFindings > 0 ? (
-                      <span className="rounded-sm bg-amber-400/10 px-1 text-[10px] font-semibold text-amber-400">
-                        {securityFindings}
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {NAV_ITEMS.map((item) => (
+          <NavItem key={item.to} {...item} />
         ))}
       </nav>
 
-      {/* Bottom: connection status + user */}
-      <div className="shrink-0 border-t border-studio-line p-2">
-        <button
-          type="button"
-          onClick={() => setActiveView("aws")}
-          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-studio-muted hover:bg-studio-panel2"
-        >
-          <CloudCog className="h-3.5 w-3.5 shrink-0 text-studio-faint" aria-hidden="true" />
-          <span className="flex-1">AWS</span>
-          <span className="flex items-center gap-1.5 text-[11px]">
-            <ConnectionDot connected={awsConnected} />
-            {awsConnected ? "Connected" : "Not connected"}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveView("repository")}
-          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-studio-muted hover:bg-studio-panel2"
-        >
-          <Boxes className="h-3.5 w-3.5 shrink-0 text-studio-faint" aria-hidden="true" />
-          <span className="flex-1">GitHub</span>
-          <span className="flex items-center gap-1.5 text-[11px]">
-            <ConnectionDot connected={githubAvailable} />
-            {githubAvailable ? "Connected" : "Not connected"}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveView("settings")}
-          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-studio-muted hover:bg-studio-panel2"
-        >
-          <Settings className="h-3.5 w-3.5 shrink-0 text-studio-faint" aria-hidden="true" />
-          <span className="flex-1">Settings</span>
-        </button>
-
-        <div className="mt-2 flex items-center gap-2 rounded border-t border-studio-line pt-2">
-          {user?.avatar ? (
-            <img src={user.avatar} alt="" className="h-6 w-6 rounded-full border border-studio-line2" />
-          ) : (
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-studio-panel2 text-[10px] font-semibold text-studio-muted">
-              {(user?.username ?? "?")[0]?.toUpperCase()}
-            </div>
-          )}
-          <span className="min-w-0 flex-1 truncate text-xs text-studio-text">{user?.username}</span>
-          <button
-            type="button"
-            onClick={handleSignOut}
-            title="Sign out"
-            className="flex h-6 w-6 items-center justify-center rounded text-studio-faint hover:bg-studio-panel2 hover:text-studio-danger"
-          >
-            <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
+      {/* User */}
+      <div className="px-3 py-4 border-t border-surface-600 space-y-2">
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-xs font-bold text-white">
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+            <p className="text-xs text-surface-300 truncate">{user?.email}</p>
+          </div>
         </div>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-surface-200 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150 text-sm"
+        >
+          <LogOut size={15} />
+          Sign out
+        </button>
       </div>
     </aside>
-  );
+  )
 }

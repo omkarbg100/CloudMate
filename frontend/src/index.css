@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #0a0a0f;
+    color: #e8e8f0;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #111118;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #3d3d55;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #5a5a7a;
+  }
+}
+
+@layer components {
+  /* Card */
+  .card {
+    @apply bg-surface-800 border border-surface-600 rounded-xl p-5;
+  }
+
+  /* Glow ring on focus */
+  .input-base {
+    @apply w-full bg-surface-700 border border-surface-500 text-white rounded-lg px-4 py-2.5 text-sm
+           placeholder-surface-300 outline-none transition-all duration-150
+           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
+  }
+
+  /* Gradient brand text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-400 to-brand-300 bg-clip-text text-transparent;
+  }
+
+  /* Subtle horizontal divider */
+  .divider {
+    @apply border-t border-surface-600;
+  }
+
+  /* Status pill base */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  /* Code / monospace block */
+  .code-block {
+    @apply font-mono text-sm bg-surface-700 border border-surface-500 rounded-lg p-4 overflow-auto;
+  }
+}
+
+/* React Flow overrides */
+.react-flow__background {
+  background-color: #111118 !important;
+}
+.react-flow__edge-path {
+  stroke: #4f46e5 !important;
+  stroke-width: 2;
+}
+.react-flow__node {
+  cursor: default !important;
+}
+.react-flow__controls {
+  background: #1a1a26 !important;
+  border: 1px solid #2d2d42 !important;
+  border-radius: 8px !important;
+}
+.react-flow__controls-button {
+  background: transparent !important;
+  border-bottom: 1px solid #2d2d42 !important;
+  color: #b8b8cc !important;
+}
+.react-flow__controls-button:hover {
+  background: #2d2d42 !important;
+}

@@ -1,26 +1,28 @@
 {
-  "name": "@deploymate/frontend",
-  "version": "0.1.0",
+  "name": "deploymate-frontend",
+  "version": "1.0.0",
+  "description": "DeployMate Studio — React Frontend",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@monaco-editor/react": "^4.7.0",
-    "@tanstack/react-query": "^5.62.8",
-    "lucide-react": "^0.468.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zustand": "^5.0.2"
+    "@tanstack/react-query": "^5.62.0",
+    "axios": "^1.7.9",
+    "lucide-react": "^0.469.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.0",
+    "reactflow": "^11.11.4"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "vite": "^6.0.3"
+    "vite": "^6.0.6"
   }
 }

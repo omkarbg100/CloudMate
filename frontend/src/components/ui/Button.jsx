@@ -1,44 +1,41 @@
-import { Loader2 } from "lucide-react";
+import { Loader2 } from 'lucide-react'
 
-const VARIANTS = {
-  primary:
-    "bg-studio-accent text-white border border-transparent hover:bg-studio-accentHi disabled:opacity-50",
-  secondary:
-    "bg-transparent text-studio-text border-studio-line2 hover:border-studio-faint hover:bg-studio-panel2 disabled:opacity-50",
-  ghost: "bg-transparent text-studio-muted border border-transparent hover:text-studio-text disabled:opacity-50",
-  danger:
-    "bg-transparent text-rose-400 border-studio-line2 hover:border-rose-400/40 hover:bg-rose-400/10 disabled:opacity-50",
-};
+const variants = {
+  primary: 'bg-brand-600 hover:bg-brand-500 text-white border-transparent shadow-lg shadow-brand-600/20',
+  secondary: 'bg-surface-700 hover:bg-surface-600 text-white border-surface-500',
+  ghost: 'bg-transparent hover:bg-surface-700 text-surface-100 border-transparent',
+  danger: 'bg-red-600/10 hover:bg-red-600/20 text-red-400 border-red-500/30',
+  outline: 'bg-transparent hover:bg-brand-600/10 text-brand-400 border-brand-500/50 hover:border-brand-500',
+}
 
-const SIZES = {
-  xs: "h-7 px-2 text-xs gap-1.5",
-  sm: "h-8 px-3 text-xs gap-2",
-  md: "h-9 px-4 text-sm gap-2",
-};
+const sizes = {
+  sm: 'h-8 px-3 text-xs gap-1.5',
+  md: 'h-9 px-4 text-sm gap-2',
+  lg: 'h-11 px-6 text-base gap-2.5',
+}
 
-export function Button({
+export default function Button({
   children,
-  variant = "secondary",
-  size = "sm",
-  isLoading = false,
-  loadingLabel,
-  className = "",
-  ...rest
+  variant = 'primary',
+  size = 'md',
+  loading = false,
+  disabled = false,
+  className = '',
+  ...props
 }) {
   return (
     <button
-      type="button"
-      className={`inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-accent/50 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
-      {...rest}
+      {...props}
+      disabled={disabled || loading}
+      className={`
+        inline-flex items-center justify-center font-medium rounded-lg border
+        transition-all duration-150 cursor-pointer select-none
+        disabled:opacity-50 disabled:cursor-not-allowed
+        ${variants[variant]} ${sizes[size]} ${className}
+      `}
     >
-      {isLoading ? (
-        <>
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-          {loadingLabel ?? children}
-        </>
-      ) : (
-        children
-      )}
+      {loading && <Loader2 className="animate-spin" size={size === 'lg' ? 18 : 15} />}
+      {children}
     </button>
-  );
+  )
 }
