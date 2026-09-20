@@ -3,8 +3,12 @@ services:
     build:
       context: ./Ai-servises
       dockerfile: Dockerfile
-    image: deploymate-ai-services:local
+    image: ${AI_SERVICE_IMAGE:-deploymate-ai-services:local}
     container_name: deploymate-ai-services
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-${GOOGLE_API_KEY:-}}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
     env_file:
       - path: ./Ai-servises/.env
         required: false
@@ -23,18 +27,18 @@ services:
 
   backend:
     build:
-      context: ./Backend
+      context: ./backend
       dockerfile: Dockerfile
-    image: deploymate-backend:local
+    image: ${SERVER_IMAGE:-deploymate-backend:local}
     container_name: deploymate-backend
     environment:
       PORT: 4000
       NODE_ENV: production
-      MONGODB_URI: mongodb://mongodb:27017/deploymate
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/deploymate}
       AI_SERVICE_URL: http://ai-services:8000
       AI_ENGINE_URL: http://ai-services:8000
-      FRONTEND_URL: http://localhost:5173
-      FRONTEND_ORIGIN: http://localhost:5173
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost}
       JWT_SECRET: ${JWT_SECRET:-deploymate-secret-key-min-32-chars-length}
     ports:
       - "4000:4000"
@@ -49,10 +53,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: deploymate-frontend:local
+    image: ${CLIENT_IMAGE:-deploymate-frontend:local}
     container_name: deploymate-frontend
     ports:
-      - "5173:80"
+      - "${FRONTEND_PORT:-80}:80"
     depends_on:
       - backend
     restart: unless-stopped

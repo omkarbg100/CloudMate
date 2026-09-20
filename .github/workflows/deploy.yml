@@ -3,9 +3,10 @@ name: Deploy
 on:
   push:
     branches: [deploymate]
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     environment: CloudMate Production
 
@@ -37,7 +38,11 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ${{ env.DOCKERHUB_USER }}/cca-client:${{ github.sha }}
+          tags: |
+            ${{ env.DOCKERHUB_USER }}/cca-client:${{ github.sha }}
+            ${{ env.DOCKERHUB_USER }}/cca-client:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push — backend
         uses: docker/build-push-action@v5
@@ -45,7 +50,11 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: ${{ env.DOCKERHUB_USER }}/cca-server:${{ github.sha }}
+          tags: |
+            ${{ env.DOCKERHUB_USER }}/cca-server:${{ github.sha }}
+            ${{ env.DOCKERHUB_USER }}/cca-server:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push — Ai-services
         uses: docker/build-push-action@v5
@@ -53,21 +62,61 @@ jobs:
           context: ./Ai-servises
           file: ./Ai-servises/Dockerfile
           push: true
-          tags: ${{ env.DOCKERHUB_USER }}/cca-ai-service:${{ github.sha }}
+          tags: |
+            ${{ env.DOCKERHUB_USER }}/cca-ai-service:${{ github.sha }}
+            ${{ env.DOCKERHUB_USER }}/cca-ai-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Deploy to VM
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+          DOCKER_USER: ${{ env.DOCKERHUB_USER }}
+          IMAGE_TAG: ${{ github.sha }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          echo "$SSH_KEY" > ~/ssh_key
-          chmod 600 ~/ssh_key
-          ssh -o StrictHostKeyChecking=no -i ~/ssh_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} -t "
-            cd ~/codebase-chat-assistant &&
-            MONGODB_URI='${{ secrets.MONGODB_URI }}' \
-            JWT_SECRET='${{ secrets.JWT_SECRET }}' \
-            GOOGLE_API_KEY='${{ secrets.GOOGLE_API_KEY }}' \
-            CLIENT_IMAGE='${{ env.DOCKERHUB_USER }}/cca-client:${{ github.sha }}' \
-            SERVER_IMAGE='${{ env.DOCKERHUB_USER }}/cca-server:${{ github.sha }}' \
-            AI_SERVICE_IMAGE='${{ env.DOCKERHUB_USER }}/cca-ai-service:${{ github.sha }}' \
-            docker compose up -d --pull always --remove-orphans
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          REMOTE_DIR="~/codebase-chat-assistant"
+
+          # Ensure remote project directory exists
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key "$VM_USER@$VM_HOST" "mkdir -p $REMOTE_DIR"
+
+          # Copy docker-compose.yml to remote VM
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key docker-compose.yml "$VM_USER@$VM_HOST:$REMOTE_DIR/docker-compose.yml"
+
+          # Generate production environment file safely and transfer to VM
+          cat << EOF > remote.env
+          CLIENT_IMAGE=${DOCKER_USER}/cca-client:${IMAGE_TAG}
+          SERVER_IMAGE=${DOCKER_USER}/cca-server:${IMAGE_TAG}
+          AI_SERVICE_IMAGE=${DOCKER_USER}/cca-ai-service:${IMAGE_TAG}
+          MONGODB_URI=${MONGODB_URI}
+          JWT_SECRET=${JWT_SECRET}
+          GOOGLE_API_KEY=${GOOGLE_API_KEY}
+          GEMINI_API_KEY=${GOOGLE_API_KEY}
+          FRONTEND_PORT=80
+          EOF
+
+          # Trim leading spaces from remote.env
+          sed -i 's/^[ \t]*//' remote.env
+
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key remote.env "$VM_USER@$VM_HOST:$REMOTE_DIR/.env"
+          rm -f remote.env
+
+          # Pull images and start containers on the VM
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key "$VM_USER@$VM_HOST" "
+            cd $REMOTE_DIR &&
+            docker compose pull &&
+            docker compose up -d --remove-orphans &&
+            docker image prune -f &&
+            docker compose ps
           "
+
+          # Clean up deploy key on runner
+          rm -f ~/.ssh/deploy_key
