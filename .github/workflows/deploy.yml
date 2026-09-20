@@ -19,27 +19,27 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push — client
+      - name: Build and push — frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./client
-          file: ./client/Dockerfile
+          context: ./frontend
+          file: ./frontend/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cca-client:${{ github.sha }}
 
-      - name: Build and push — server
+      - name: Build and push — backend
         uses: docker/build-push-action@v5
         with:
-          context: ./server
-          file: ./server/Dockerfile
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cca-server:${{ github.sha }}
 
-      - name: Build and push — ai-service
+      - name: Build and push — Ai-services
         uses: docker/build-push-action@v5
         with:
-          context: ./ai-service
-          file: ./ai-service/Dockerfile
+          context: ./Ai-servises
+          file: ./Ai-servises/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/cca-ai-service:${{ github.sha }}
 
