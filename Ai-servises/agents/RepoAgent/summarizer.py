@@ -37,12 +37,27 @@ Files analyzed (with line counts):
 Excerpts from file contents (first 3000 characters each):
 {file_contents}
 
-Generate a summary with exactly these sections:
-- What this project does: Describe the purpose and main functionality based on docs/code. If unclear, say "Purpose not clearly defined in analyzed files."
-- Architecture: High-level overview of the system design (e.g., frontend/backend separation, key components, languages/frameworks in different parts). Use the directory structure and file contents to infer this. For example, if there are 'frontend' and 'backend' directories, describe the separation. If not evident, say "Architecture not fully clear from analyzed files."
-- Tech stack: List languages, frameworks, libraries, and tools inferred from files/extensions. Be specific (e.g., "Python with FastAPI" not just "Python").
-- How to run (best guess): Provide setup/installation and run commands based on configs/scripts. If no clear instructions, say "Run instructions not found; likely requires [language] runtime."
-- Key files to read first: Recommend 3-5 most important files (e.g., README, main entry point, config files) with brief reasons.
+Generate a clean, beautifully structured markdown summary with exactly these sections:
+### What this project does
+Describe the purpose and main functionality based on docs/code in a clear, concise paragraph. If unclear, say "Purpose not clearly defined in analyzed files."
+
+### Architecture
+High-level overview of the system design (e.g., frontend/backend separation, microservices, databases). List individual components as bullet points with their roles and ports (e.g., - **Client**: ..., - **Server**: ..., - **AI Service**: ...). If not evident, say "Architecture not fully clear from analyzed files."
+
+### Tech stack
+Categorized list of technologies:
+- **Languages**: JavaScript, Python, etc.
+- **Frontend**: React, Vite, etc.
+- **Backend**: Node.js, Express, etc.
+- **AI Service**: FastAPI, LangChain, etc.
+- **Orchestration & DevOps**: Docker, Docker Compose, etc.
+
+### How to run (best guess)
+Provide setup/installation and execution commands in fenced code blocks (```bash). If environment variables or secrets are needed, list them clearly. If no clear instructions, say "Run instructions not found; likely requires [language] runtime."
+
+### Key files to read first
+Recommend 3-5 most important files formatted as:
+- `path/to/file`: Brief explanation of its importance.
 """
 
     return call_llm(prompt, state)

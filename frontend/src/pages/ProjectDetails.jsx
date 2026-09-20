@@ -13,6 +13,7 @@ import { PageSpinner, Skeleton } from '../components/ui/Skeleton'
 import ErrorBox from '../components/ui/ErrorBox'
 import ArchitectureDiagram from '../components/architecture/ArchitectureDiagram'
 import ArchitecturePanel from '../components/architecture/ArchitecturePanel'
+import RepositoryAnalysisView from '../components/analysis/RepositoryAnalysisView'
 
 // ── Workflow step indicator ────────────────────────────────────────────────────
 function WorkflowStep({ number, label, done, active }) {
@@ -84,22 +85,7 @@ function AnalysisSection({ project, analysis, onAnalyze, isAnalyzing }) {
           ]}
         />
       ) : hasAnalysis ? (
-        <div className="space-y-3">
-          <div className={`relative overflow-hidden transition-all duration-300 ${!expanded ? 'max-h-48' : 'max-h-none'}`}>
-            <pre className="code-block text-surface-200 text-xs whitespace-pre-wrap leading-relaxed">
-              {analysis.summary}
-            </pre>
-            {!expanded && (
-              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-surface-800 to-transparent" />
-            )}
-          </div>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 transition-colors"
-          >
-            {expanded ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> Show full analysis</>}
-          </button>
-        </div>
+        <RepositoryAnalysisView summary={analysis.summary} />
       ) : (
         <div className="text-center py-8 space-y-4">
           <p className="text-surface-200 text-sm">
