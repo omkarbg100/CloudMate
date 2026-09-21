@@ -6,6 +6,7 @@
 
 ## 📑 Table of Contents
 - [Architecture Overview](#architecture-overview)
+- [Screenshots](#screenshots)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Environment Configuration](#environment-configuration)
@@ -15,6 +16,7 @@
 - [End-to-End User Workflow](#end-to-end-user-workflow)
 - [API Reference](#api-reference)
 - [Troubleshooting & Common Issues](#troubleshooting--common-issues)
+- [Blog Post](#blog-post)
 - [License](#license)
 
 ---
@@ -59,6 +61,34 @@ graph LR
 | **Backend** | Node.js, Express, Mongoose | `4000` | REST API gateway, JWT authentication, rate limiting, and project persistence |
 | **AI Services** | Python 3.10+, FastAPI, LangChain / LLMs | `8000` | Repository cloning/inspection and AWS architecture synthesis |
 | **Database** | MongoDB 7 | `27017` | Document store for users, projects, and AI analysis data |
+
+---
+
+## 🖼 Screenshots
+
+### System Architecture Diagram
+![AWS Architecture Diagram](Images/Arch.png)
+
+### Landing Page
+![Landing Page](Images/Screenshot%202026-09-18%20011831.png)
+
+### Dashboard
+![Dashboard](Images/Screenshot%202026-09-20%20171308.png)
+
+### Create New Project
+![Create New Project](Images/Screenshot%202026-09-20%20171318.png)
+
+### Repository Analysis
+![Repository Analysis](Images/Screenshot%202026-09-20%20171346.png)
+
+### Architecture Generation
+![Architecture Generation](Images/Screenshot%202026-09-20%20171357.png)
+
+### Interactive AWS Topology
+![Interactive AWS Topology](Images/Screenshot%202026-09-20%20171408.png)
+
+### Architecture Detail Panel
+![Architecture Detail Panel](Images/Screenshot%202026-09-20%20171415.png)
 
 ---
 
@@ -270,6 +300,16 @@ docker compose down
 2. **LLM API Key Error** – Verify that either `GEMINI_API_KEY` or `GROQ_API_KEY` is set and has sufficient quota.
 3. **MongoDB Connection Refused** – Make sure `mongod` is running locally or that the Docker container hostname is used (`mongodb://mongodb:27017/...`).
 4. **CORS Errors** – Confirm `FRONTEND_URL` matches the origin (`http://localhost:5173`). Axios is configured with `withCredentials: true`.
+
+---
+
+## 📝 Blog Post
+
+Want to learn how DeployMate Studio was built? Read our full write-up on the AWS Builder Blog:
+
+🔗 **[DeployMate: Building an AI-Powered Code-to-Cloud Assistant on AWS](https://builder.aws.com/content/3Jagvd8l29omBSRvpL9MDJb9dot/deploymate-building-an-ai-powered-code-to-cloud-assistant-on-aws)**
+
+The post covers the end-to-end design decisions, the RepoAgent and ArchitectAgent internals, LangGraph workflow orchestration, and deployment on AWS.
 
 ---
 
