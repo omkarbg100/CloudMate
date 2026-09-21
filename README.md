@@ -69,26 +69,19 @@ graph LR
 ### System Architecture Diagram
 ![AWS Architecture Diagram](Images/Arch.png)
 
-### Home Page
-![Home Page](Images/Screenshot%202026-09-18%20011831.png)
+**App Preview**
 
-### How It Works – Steps
-![How It Works – Steps](Images/Screenshot%202026-09-20%20171308.png)
+![](Images/Screenshot%202026-09-20%20171308.png)
 
-### Repository Analysis & Tech Stack
-![Repository Analysis & Tech Stack](Images/Screenshot%202026-09-20%20171318.png)
+![](Images/Screenshot%202026-09-20%20171318.png)
 
-### Architecture Details
-![Architecture Details](Images/Screenshot%202026-09-20%20171346.png)
+![](Images/Screenshot%202026-09-20%20171346.png)
 
-### Architecture Generation
-![Architecture Generation](Images/Screenshot%202026-09-20%20171357.png)
+![](Images/Screenshot%202026-09-20%20171357.png)
 
-### Interactive AWS Topology
-![Interactive AWS Topology](Images/Screenshot%202026-09-20%20171408.png)
+![](Images/Screenshot%202026-09-20%20171408.png)
 
-### Architecture Detail Panel
-![Architecture Detail Panel](Images/Screenshot%202026-09-20%20171415.png)
+![](Images/Screenshot%202026-09-20%20171415.png)
 
 ---
 
