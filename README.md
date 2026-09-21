@@ -69,17 +69,17 @@ graph LR
 ### System Architecture Diagram
 ![AWS Architecture Diagram](Images/Arch.png)
 
-### Landing Page
-![Landing Page](Images/Screenshot%202026-09-18%20011831.png)
+### Home Page
+![Home Page](Images/Screenshot%202026-09-18%20011831.png)
 
-### Dashboard
-![Dashboard](Images/Screenshot%202026-09-20%20171308.png)
+### How It Works – Steps
+![How It Works – Steps](Images/Screenshot%202026-09-20%20171308.png)
 
-### Create New Project
-![Create New Project](Images/Screenshot%202026-09-20%20171318.png)
+### Repository Analysis & Tech Stack
+![Repository Analysis & Tech Stack](Images/Screenshot%202026-09-20%20171318.png)
 
-### Repository Analysis
-![Repository Analysis](Images/Screenshot%202026-09-20%20171346.png)
+### Architecture Details
+![Architecture Details](Images/Screenshot%202026-09-20%20171346.png)
 
 ### Architecture Generation
 ![Architecture Generation](Images/Screenshot%202026-09-20%20171357.png)
