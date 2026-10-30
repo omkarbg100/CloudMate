@@ -12,10 +12,16 @@
   }
 
   body {
-    background-color: #0a0a0f;
-    color: #e8e8f0;
-    font-family: 'Inter', system-ui, sans-serif;
+    background-color: #09090e;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(14, 165, 233, 0.04) 0px, transparent 50%);
+    background-attachment: fixed;
+    color: #e8e8f2;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   ::-webkit-scrollbar {
@@ -23,66 +29,70 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #111118;
+    background: rgba(17, 17, 24, 0.6);
   }
   ::-webkit-scrollbar-thumb {
-    background: #3d3d55;
-    border-radius: 3px;
+    background: #2e2e42;
+    border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #5a5a7a;
+    background: #474766;
   }
 }
 
 @layer components {
-  /* Card */
+  /* Modern translucent card with subtle border highlight */
   .card {
-    @apply bg-surface-800 border border-surface-600 rounded-xl p-5;
+    @apply bg-surface-800/85 backdrop-blur-md border border-surface-600/80 rounded-xl p-5 shadow-lg shadow-black/20 transition-all duration-200;
+  }
+  .card:hover {
+    @apply border-surface-500/90 shadow-black/40;
   }
 
   /* Glow ring on focus */
   .input-base {
-    @apply w-full bg-surface-700 border border-surface-500 text-white rounded-lg px-4 py-2.5 text-sm
-           placeholder-surface-300 outline-none transition-all duration-150
-           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
+    @apply w-full bg-surface-700/80 border border-surface-500/80 text-white rounded-lg px-4 py-2.5 text-sm
+           placeholder-surface-300 outline-none transition-all duration-200
+           focus:border-brand-400 focus:bg-surface-700 focus:ring-2 focus:ring-brand-500/25;
   }
 
   /* Gradient brand text */
   .gradient-text {
-    @apply bg-gradient-to-r from-brand-400 to-brand-300 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-brand-300 via-indigo-300 to-sky-300 bg-clip-text text-transparent font-extrabold;
   }
 
   /* Subtle horizontal divider */
   .divider {
-    @apply border-t border-surface-600;
+    @apply border-t border-surface-600/70;
   }
 
   /* Status pill base */
   .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-transparent shadow-sm;
   }
 
   /* Code / monospace block */
   .code-block {
-    @apply font-mono text-sm bg-surface-700 border border-surface-500 rounded-lg p-4 overflow-auto;
+    @apply font-mono text-sm bg-surface-800/95 border border-surface-600/80 rounded-xl p-4 overflow-auto shadow-inner;
   }
 }
 
 /* React Flow overrides */
 .react-flow__background {
-  background-color: #111118 !important;
+  background-color: #0d0d14 !important;
 }
 .react-flow__edge-path {
-  stroke: #4f46e5 !important;
+  stroke: #6366f1 !important;
   stroke-width: 2;
 }
 .react-flow__node {
   cursor: default !important;
 }
 .react-flow__controls {
-  background: #1a1a26 !important;
+  background: #161622 !important;
   border: 1px solid #2d2d42 !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
 }
 .react-flow__controls-button {
   background: transparent !important;

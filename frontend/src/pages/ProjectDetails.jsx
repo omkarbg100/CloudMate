@@ -3,48 +3,49 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   GitBranch, Globe, Cpu, Rocket, Trash2, ExternalLink,
-  CheckCircle2, Circle, Loader2, AlertCircle, RefreshCw,
-  ChevronDown, ChevronUp, Sparkles,
+  CheckCircle2, Loader2, AlertCircle, RefreshCw, Sparkles,
 } from 'lucide-react'
 import api from '../services/api'
 import Button from '../components/ui/Button'
 import StatusBadge from '../components/ui/StatusBadge'
-import { PageSpinner, Skeleton } from '../components/ui/Skeleton'
+import { PageSpinner } from '../components/ui/Skeleton'
 import ErrorBox from '../components/ui/ErrorBox'
 import ArchitectureDiagram from '../components/architecture/ArchitectureDiagram'
 import ArchitecturePanel from '../components/architecture/ArchitecturePanel'
 import RepositoryAnalysisView from '../components/analysis/RepositoryAnalysisView'
 
-// ── Workflow step indicator ────────────────────────────────────────────────────
+// ─── Workflow Step Indicator ──────────────────────────────────────────────────
 function WorkflowStep({ number, label, done, active }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all
-        ${done   ? 'bg-brand-600 text-white'         : ''}
-        ${active ? 'bg-surface-600 text-white border-2 border-brand-500' : ''}
-        ${!done && !active ? 'bg-surface-700 text-surface-300' : ''}
+    <div className="flex items-center gap-2.5">
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm
+        ${done   ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-brand-500/25' : ''}
+        ${active ? 'bg-surface-700 text-brand-300 border-2 border-brand-400 ring-4 ring-brand-500/10' : ''}
+        ${!done && !active ? 'bg-surface-700/80 text-surface-300 border border-surface-600' : ''}
       `}>
-        {done ? <CheckCircle2 size={13} /> : number}
+        {done ? <CheckCircle2 size={14} /> : number}
       </div>
-      <span className={`text-sm font-medium ${done || active ? 'text-white' : 'text-surface-300'}`}>
+      <span className={`text-sm font-semibold tracking-tight ${done || active ? 'text-white' : 'text-surface-300'}`}>
         {label}
       </span>
     </div>
   )
 }
 
-// ── Loading steps animation ───────────────────────────────────────────────────
+// ─── Loading Steps Animation ──────────────────────────────────────────────────
 function LoadingSteps({ steps, label }) {
   return (
-    <div className="space-y-3 py-6 text-center">
-      <div className="flex justify-center mb-4">
-        <Loader2 size={32} className="text-brand-400 animate-spin" />
+    <div className="space-y-4 py-8 text-center bg-surface-800/40 rounded-xl border border-surface-700/50">
+      <div className="flex justify-center mb-3">
+        <div className="w-12 h-12 rounded-2xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center shadow-lg shadow-brand-500/10">
+          <Loader2 size={24} className="text-brand-400 animate-spin" />
+        </div>
       </div>
-      <p className="font-medium text-white">{label}</p>
+      <p className="font-semibold text-white text-base">{label}</p>
       <div className="space-y-2 max-w-xs mx-auto">
         {steps.map((step, i) => (
-          <p key={i} className="text-xs text-surface-300 flex items-center justify-center gap-2">
-            <span className="w-1 h-1 rounded-full bg-brand-400" />
+          <p key={i} className="text-xs text-surface-200 flex items-center justify-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
             {step}
           </p>
         ))}
@@ -53,16 +54,15 @@ function LoadingSteps({ steps, label }) {
   )
 }
 
-// ── Analysis section ──────────────────────────────────────────────────────────
-function AnalysisSection({ project, analysis, onAnalyze, isAnalyzing }) {
-  const [expanded, setExpanded] = useState(false)
+// ─── Analysis Section ─────────────────────────────────────────────────────────
+function AnalysisSection({ analysis, onAnalyze, isAnalyzing }) {
   const hasAnalysis = !!analysis?.summary
 
   return (
     <div className="card space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-white flex items-center gap-2">
-          <GitBranch size={17} className="text-brand-400" />
+        <h2 className="font-semibold text-white text-base flex items-center gap-2.5">
+          <GitBranch size={18} className="text-brand-400" />
           Repository Analysis
         </h2>
         {hasAnalysis && (
@@ -75,21 +75,24 @@ function AnalysisSection({ project, analysis, onAnalyze, isAnalyzing }) {
 
       {isAnalyzing ? (
         <LoadingSteps
-          label="Analyzing repository..."
+          label="Running RepoAgent LangGraph..."
           steps={[
-            'Cloning repository',
-            'Scanning project structure',
-            'Understanding dependencies',
-            'Identifying entry points',
-            'Generating summary',
+            'Cloning repository payload',
+            'Discovering structure & project type',
+            'Iterative agent think & act cycles',
+            'Extracting key architectural modules',
+            'Compiling comprehensive summary',
           ]}
         />
       ) : hasAnalysis ? (
         <RepositoryAnalysisView summary={analysis.summary} />
       ) : (
-        <div className="text-center py-8 space-y-4">
-          <p className="text-surface-200 text-sm">
-            Analyze this repository to understand its structure, dependencies, and entry points.
+        <div className="text-center py-10 space-y-4 bg-surface-700/20 rounded-xl border border-surface-700/50">
+          <div className="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center mx-auto text-brand-400">
+            <Sparkles size={22} />
+          </div>
+          <p className="text-surface-200 text-sm max-w-sm mx-auto">
+            Analyze this repository with the LangGraph RepoAgent to parse framework, dependencies, and entry points.
           </p>
           <Button onClick={onAnalyze} loading={isAnalyzing}>
             <Sparkles size={15} />
@@ -101,16 +104,16 @@ function AnalysisSection({ project, analysis, onAnalyze, isAnalyzing }) {
   )
 }
 
-// ── Architecture section ──────────────────────────────────────────────────────
+// ─── Architecture Section ─────────────────────────────────────────────────────
 function ArchitectureSection({ project, analysis, onGenerate, isGenerating }) {
   const [requirements, setRequirements] = useState(project?.requirements || '')
-  const [region, setRegion] = useState(project?.region || 'ap-south-1')
+  const [region] = useState(project?.region || 'ap-south-1')
   const [showForm, setShowForm] = useState(false)
   const hasArch = !!analysis?.architecture
 
   if (!analysis?.summary) {
     return (
-      <div className="card opacity-50">
+      <div className="card opacity-60">
         <h2 className="font-semibold text-white flex items-center gap-2 mb-2">
           <Cpu size={17} className="text-surface-300" />
           AWS Architecture
@@ -123,38 +126,38 @@ function ArchitectureSection({ project, analysis, onGenerate, isGenerating }) {
   return (
     <div className="card space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-white flex items-center gap-2">
-          <Cpu size={17} className="text-brand-400" />
-          AWS Architecture
+        <h2 className="font-semibold text-white text-base flex items-center gap-2.5">
+          <Cpu size={18} className="text-brand-400" />
+          AWS Architecture Plan
         </h2>
         {hasArch && (
           <Button variant="secondary" size="sm" onClick={() => setShowForm(!showForm)}>
             <Sparkles size={13} />
-            Regenerate
+            {showForm ? 'Cancel' : 'Regenerate'}
           </Button>
         )}
       </div>
 
       {isGenerating ? (
         <LoadingSteps
-          label="Designing AWS architecture..."
+          label="Designing AWS Architecture with LiteLLM..."
           steps={[
-            'Analyzing application requirements',
-            'Selecting AWS services',
-            'Designing service connections',
-            'Generating rationale',
+            'Calling Primary LLM (Ollama / Gemini Fallback)',
+            'Pydantic schema validation',
+            'Mapping connection topologies & security',
+            'Compiling architecture design',
           ]}
         />
       ) : (
         <>
           {(!hasArch || showForm) && (
-            <div className="space-y-3 bg-surface-700 rounded-xl p-4">
+            <div className="space-y-4 bg-surface-700/40 border border-surface-600/70 rounded-xl p-5">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-surface-200">Deployment Requirements</label>
+                <label className="text-xs font-semibold text-surface-200">Deployment & Scaling Requirements</label>
                 <textarea
                   value={requirements}
                   onChange={(e) => setRequirements(e.target.value)}
-                  placeholder="e.g. Scalable production app with 10k concurrent users..."
+                  placeholder="e.g. Scalable production workload with 10k concurrent users, high availability, PostgreSQL database, and Redis caching..."
                   rows={3}
                   className="input-base text-xs resize-none"
                 />
@@ -178,33 +181,33 @@ function ArchitectureSection({ project, analysis, onGenerate, isGenerating }) {
   )
 }
 
-// ── Deployment section ────────────────────────────────────────────────────────
+// ─── Deployment Section ───────────────────────────────────────────────────────
 function DeploymentSection({ project }) {
   const canDeploy = ['architecture_generated', 'deployment_ready'].includes(project?.status)
 
   return (
-    <div className={`card space-y-3 ${!canDeploy ? 'opacity-50' : ''}`}>
-      <h2 className="font-semibold text-white flex items-center gap-2">
-        <Rocket size={17} className={canDeploy ? 'text-brand-400' : 'text-surface-300'} />
-        Deployment
+    <div className={`card space-y-3 ${!canDeploy ? 'opacity-60' : ''}`}>
+      <h2 className="font-semibold text-white text-base flex items-center gap-2.5">
+        <Rocket size={18} className={canDeploy ? 'text-brand-400' : 'text-surface-300'} />
+        Cloud Deployment
       </h2>
-      <div className="bg-surface-700 rounded-xl p-5 text-center space-y-3">
-        <div className="w-12 h-12 rounded-xl bg-surface-600 flex items-center justify-center mx-auto">
-          <Rocket size={20} className="text-surface-300" />
+      <div className="bg-surface-700/30 border border-surface-600/50 rounded-xl p-6 text-center space-y-3">
+        <div className="w-12 h-12 rounded-2xl bg-surface-700 border border-surface-600 flex items-center justify-center mx-auto text-surface-300 shadow-inner">
+          <Rocket size={20} />
         </div>
         <div>
-          <p className="font-medium text-white text-sm">
-            {canDeploy ? 'Your infrastructure plan is ready.' : 'Generate an architecture to proceed.'}
+          <p className="font-semibold text-white text-sm">
+            {canDeploy ? 'Your architecture plan is verified and ready for provisioning.' : 'Generate an architecture plan to proceed.'}
           </p>
-          <p className="text-sm text-surface-300 mt-1">
-            AWS deployment automation is <span className="text-brand-400 font-medium">coming soon</span>.
+          <p className="text-xs text-surface-300 mt-1">
+            Automated Terraform / CDK deployment is <span className="text-brand-400 font-semibold">in development</span>.
           </p>
         </div>
         {canDeploy && (
           <Button variant="secondary" size="sm" disabled>
             <Rocket size={13} />
             Deploy to AWS
-            <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-surface-600 text-surface-200">Soon</span>
+            <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-surface-600 text-surface-200">Coming Soon</span>
           </Button>
         )}
       </div>
@@ -212,7 +215,7 @@ function DeploymentSection({ project }) {
   )
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProjectDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -281,35 +284,35 @@ export default function ProjectDetails() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-sm text-surface-300 mb-2">
+          <div className="flex items-center gap-2 text-xs text-surface-300 mb-2">
             <Link to="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
             <span>/</span>
             <Link to="/projects" className="hover:text-white transition-colors">Projects</Link>
             <span>/</span>
-            <span className="text-white">{project.name}</span>
+            <span className="text-white font-medium">{project.name}</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-white">{project.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{project.name}</h1>
 
-          <div className="flex items-center gap-3 mt-2 flex-wrap">
+          <div className="flex items-center gap-3 mt-3 flex-wrap">
             <StatusBadge status={project.status} />
             <a
               href={project.repoUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1 text-xs text-surface-200 hover:text-brand-400 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-surface-200 hover:text-brand-300 transition-colors font-mono"
             >
-              <ExternalLink size={11} />
+              <ExternalLink size={12} />
               {project.repoName || project.repoUrl}
             </a>
-            <span className="flex items-center gap-1 text-xs text-surface-300">
-              <Globe size={11} />
+            <span className="flex items-center gap-1.5 text-xs text-surface-300 font-mono">
+              <Globe size={12} />
               {project.region}
             </span>
-            <span className="flex items-center gap-1 text-xs text-surface-300">
-              <GitBranch size={11} />
+            <span className="flex items-center gap-1.5 text-xs text-surface-300 font-mono">
+              <GitBranch size={12} />
               {project.branch}
             </span>
           </div>
@@ -326,28 +329,28 @@ export default function ProjectDetails() {
           }}
         >
           <Trash2 size={13} />
-          Delete
+          Delete Project
         </Button>
       </div>
 
       {/* Workflow indicator */}
-      <div className="card flex items-center gap-6 flex-wrap">
+      <div className="card flex items-center justify-between gap-4 flex-wrap bg-surface-800/90">
         <WorkflowStep number={1} label="Repository" done={workflowStep >= 1} active={workflowStep === 0} />
-        <div className="flex-1 h-px bg-surface-600 hidden sm:block" />
+        <div className="flex-1 h-px bg-surface-700 hidden md:block" />
         <WorkflowStep number={2} label="Analysis" done={workflowStep >= 2} active={workflowStep === 1} />
-        <div className="flex-1 h-px bg-surface-600 hidden sm:block" />
+        <div className="flex-1 h-px bg-surface-700 hidden md:block" />
         <WorkflowStep number={3} label="Architecture" done={workflowStep >= 3} active={workflowStep === 2} />
-        <div className="flex-1 h-px bg-surface-600 hidden sm:block" />
+        <div className="flex-1 h-px bg-surface-700 hidden md:block" />
         <WorkflowStep number={4} label="Deployment" done={false} active={workflowStep === 3} />
       </div>
 
       {/* Error from mutations */}
       {(analyzeMutation.isError || archMutation.isError) && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 flex items-start gap-3">
-          <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+        <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl px-4 py-3 flex items-start gap-3">
+          <AlertCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-red-400">Operation failed</p>
-            <p className="text-xs text-red-300 mt-0.5">
+            <p className="text-sm font-semibold text-rose-300">Operation failed</p>
+            <p className="text-xs text-rose-200 mt-0.5">
               {analyzeMutation.error?.response?.data?.error?.message ||
                 archMutation.error?.response?.data?.error?.message ||
                 'An unexpected error occurred. Please try again.'}

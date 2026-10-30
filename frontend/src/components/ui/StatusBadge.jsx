@@ -1,13 +1,13 @@
 // Status badge configuration
 const STATUS_CONFIG = {
-  created:                { label: 'Created',               color: 'bg-surface-600 text-surface-100',     dot: 'bg-surface-300' },
-  analyzing:              { label: 'Analyzing',             color: 'bg-amber-500/15 text-amber-400',      dot: 'bg-amber-400 animate-pulse' },
-  analyzed:               { label: 'Analyzed',              color: 'bg-blue-500/15 text-blue-400',        dot: 'bg-blue-400' },
-  architecture_generated: { label: 'Architecture Ready',    color: 'bg-brand-600/15 text-brand-400',     dot: 'bg-brand-400' },
-  deployment_ready:       { label: 'Deployment Ready',      color: 'bg-emerald-500/15 text-emerald-400', dot: 'bg-emerald-400' },
-  deploying:              { label: 'Deploying',             color: 'bg-orange-500/15 text-orange-400',   dot: 'bg-orange-400 animate-pulse' },
-  deployed:               { label: 'Deployed',              color: 'bg-green-500/15 text-green-400',     dot: 'bg-green-400' },
-  failed:                 { label: 'Failed',                color: 'bg-red-500/15 text-red-400',         dot: 'bg-red-400' },
+  created:                { label: 'Created',               color: 'bg-surface-700/80 text-surface-200 border-surface-600',       dot: 'bg-surface-400' },
+  analyzing:              { label: 'Analyzing',             color: 'bg-amber-500/10 text-amber-300 border-amber-500/30',         dot: 'bg-amber-400 animate-pulse' },
+  analyzed:               { label: 'Analyzed',              color: 'bg-sky-500/10 text-sky-300 border-sky-500/30',               dot: 'bg-sky-400' },
+  architecture_generated: { label: 'Architecture Ready',    color: 'bg-brand-500/15 text-brand-300 border-brand-500/30 shadow-brand-500/10', dot: 'bg-brand-400' },
+  deployment_ready:       { label: 'Deployment Ready',      color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',   dot: 'bg-emerald-400' },
+  deploying:              { label: 'Deploying',             color: 'bg-orange-500/10 text-orange-300 border-orange-500/30',     dot: 'bg-orange-400 animate-pulse' },
+  deployed:               { label: 'Deployed',              color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',   dot: 'bg-emerald-400' },
+  failed:                 { label: 'Failed',                color: 'bg-rose-500/10 text-rose-300 border-rose-500/30',            dot: 'bg-rose-400' },
 }
 
 export default function StatusBadge({ status, className = '' }) {
