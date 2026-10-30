@@ -1,4 +1,34 @@
 services:
+
+  # ─── Local LLM — Primary inference engine ─────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: deploymate-ollama
+    volumes:
+      - ollama-models:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # Pull the model on first boot (one-shot, exits after pull)
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: deploymate-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["ollama", "pull", "qwen2.5-coder:7b"]
+    restart: "no"
+
+  # ─── AI Services ──────────────────────────────────────────────────────────
   ai-services:
     build:
       context: ./Ai-servises
@@ -6,16 +36,36 @@ services:
     image: ${AI_SERVICE_IMAGE:-deploymate-ai-services:local}
     container_name: deploymate-ai-services
     environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-${GOOGLE_API_KEY:-}}
-      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      # Primary LLM (Ollama)
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5-coder:7b
+      # Fallback LLM (Gemini)
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
+      # Budget & config
+      - MAX_TOTAL_TOKENS=${MAX_TOTAL_TOKENS:-50000}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.2}
+      - LLM_TIMEOUT_SECONDS=${LLM_TIMEOUT_SECONDS:-120}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - REPO_AGENT_MAX_STEPS=${REPO_AGENT_MAX_STEPS:-15}
+      - LITELLM_LOCAL_MODEL_COST_MAP=True
     env_file:
       - path: ./Ai-servises/.env
         required: false
     ports:
       - "8000:8000"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
 
+  # ─── Database ─────────────────────────────────────────────────────────────
   mongodb:
     image: mongo:7-jammy
     container_name: deploymate-mongodb
@@ -23,8 +73,15 @@ services:
       - "27017:27017"
     volumes:
       - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
+  # ─── Backend ──────────────────────────────────────────────────────────────
   backend:
     build:
       context: ./backend
@@ -45,10 +102,13 @@ services:
     volumes:
       - deploymate-data:/app/data
     depends_on:
-      - ai-services
-      - mongodb
+      ai-services:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
     restart: unless-stopped
 
+  # ─── Frontend ─────────────────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -62,5 +122,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  ollama-models:
   mongodb-data:
   deploymate-data:

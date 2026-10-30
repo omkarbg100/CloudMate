@@ -1,55 +1,84 @@
 # agent/prompts.py
-# Prompts used by the RepoAgent for decision making and summarization
+# Prompts used by the RepoAgent for decision-making and summarization.
+
+from __future__ import annotations
+
 
 def think_prompt(state) -> str:
-    important_extensions = [".py", ".js", ".ts", ".md", ".rst", ".toml", ".txt", ".yml", ".yaml", ".json", ".ini"]
-    unread_files = [
-        f for f in state.files
-        if f not in state.read_files
+    """Build the THINK prompt for the current agent state.
+
+    Works with both AgentState (dataclass) and GraphState (TypedDict).
+    """
+    # Support both dataclass and TypedDict access patterns
+    def _get(key: str, default=None):
+        if isinstance(state, dict):
+            return state.get(key, default)
+        return getattr(state, key, default)
+
+    important_extensions = (
+        ".py", ".js", ".ts", ".md", ".rst", ".toml", ".txt",
+        ".yml", ".yaml", ".json", ".ini",
+    )
+    all_files: list = _get("files", [])
+    read_files: dict = _get("read_files", {})
+    failed_reads: list = _get("failed_reads", [])
+    repo_path: str = _get("repo_path", "")
+    project_type: str = _get("project_type") or "Unknown"
+    step: int = _get("step", 0)
+    max_steps: int = _get("max_steps", 15)
+
+    unread = [
+        f for f in all_files
+        if f not in read_files
+        and f not in failed_reads
         and any(f.endswith(ext) for ext in important_extensions)
     ]
 
-    # Sort unread files by priority: docs first, then configs, then code
-    def priority_key(f):
+    def priority_key(f: str) -> int:
         if "architecture" in f.lower() or "arch" in f.lower():
-            return -1  # Highest priority
+            return -1
         if "README" in f or f.endswith(".md") or f.endswith(".rst"):
             return 0
-        if any(k in f for k in ["pyproject.toml", "package.json", "requirements.txt", "setup.py", "Cargo.toml", "go.mod"]):
+        if any(k in f for k in [
+            "pyproject.toml", "package.json", "requirements.txt",
+            "setup.py", "Cargo.toml", "go.mod",
+        ]):
             return 1
-        if any(f.endswith(ext) for ext in [".py", ".js", ".ts", ".rs", ".go", ".java", ".cs"]):
+        if any(f.endswith(ext) for ext in [
+            ".py", ".js", ".ts", ".rs", ".go", ".java", ".cs"
+        ]):
             return 2
         return 3
-    
-    unread_files_sorted = sorted(unread_files, key=priority_key)[:10]  # Limit to 10 for manageability
 
-    # Format as numbered list
-    unread_list = "\n".join(f"{i+1}. {f}" for i, f in enumerate(unread_files_sorted))
+    candidates = sorted(unread, key=priority_key)[:10]
+    unread_list = "\n".join(f"{i + 1}. {f}" for i, f in enumerate(candidates))
+    already_read = list(read_files.keys())
 
-    return f"""
-You are an AI agent analyzing a GitHub repository to derive information for a summary including: project purpose, tech stack, how to run, and key files.
+    return f"""\
+You are an AI agent analyzing a code repository to produce a comprehensive summary.
+Goal: understand project purpose, tech stack, architecture, and how to run it.
 
-Repository path: {state.repo_path}
-Project type: {state.project_type or "Unknown"}
+Repository: {repo_path}
+Detected type: {project_type}
+Step: {step + 1} / {max_steps}
 
-Files discovered: {len(state.files)}
-Files already read: {list(state.read_files.keys())}
+Files already read ({len(already_read)}):
+{already_read if already_read else "  (none yet)"}
 
-Unread important files (sorted by priority: docs > configs > code):
-{unread_list}
+Unread priority files (pick by number):
+{unread_list if unread_list else "  (all important files read)"}
 
-Decision Strategy:
-- Always read README.md or README.rst first if available, as it contains purpose and overview.
-- Then read main config files based on project type: For Python projects, read setup.py, requirements.txt, pyproject.toml; for Node.js, package.json; for Rust, Cargo.toml; etc.
-- Then read core entry points (e.g., __main__.py for Python, index.js for Node.js) to understand functionality and architecture.
-- Focus on files that reveal architecture (e.g., directory structure, main modules).
-- Skip lock files (e.g., package-lock.json, poetry.lock) unless needed.
-- Read next if: Missing key info for summary sections like architecture.
-- Finish if: Have read README, main config, entry point, and 2-3 core files, or repo is small.
-
-Your task: Decide the next file to read for better summary derivation, or FINISH if sufficient. Choose from the numbered list above.
+Decision strategy
+─────────────────
+1. Read README.md / README.rst first — gives project overview.
+2. Read the primary config (pyproject.toml, package.json, Cargo.toml, go.mod).
+3. Read the main entry point (main.py, index.js, cmd/main.go, etc.).
+4. Read 2-3 core source files that reveal architecture.
+5. Use SEARCH_CODE if you need to find a specific pattern (e.g., "router", "model", "database").
+6. FINISH once you have enough for all summary sections.
 
 Respond with EXACTLY one of:
-- READ_FILE: [number] (e.g., READ_FILE: 1)
-- FINISH
+  READ_FILE: <number>         (read the Nth file above)
+  SEARCH_CODE: <pattern>      (grep across all files for a keyword)
+  FINISH
 """

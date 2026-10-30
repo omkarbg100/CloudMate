@@ -1,63 +1,97 @@
 # agent/summarizer.py
-# Summary generator for analyzed repositories
-# Uses LLM to create a concise summary based on insights and read files.
+# Generates a README-style summary from collected agent state.
+# Provides both sync and async interfaces.
 
-from utils.llm import call_llm
+from __future__ import annotations
 
-def generate_summary(state) -> str:
+from utils.llm import call_llm, call_llm_async
+
+_SUMMARY_SYSTEM = (
+    "You are a senior software engineer writing README documentation. "
+    "Use ONLY the provided data. Never invent details. "
+    "If a section cannot be determined, say so explicitly."
+)
+
+_SUMMARY_SECTIONS = """\
+Generate a clean, beautifully structured markdown summary with exactly these sections:
+
+### What this project does
+Describe the purpose and main functionality in a clear, concise paragraph.
+
+### Architecture
+High-level overview: frontend/backend separation, key components, ports.
+List each component as a bullet: - **Name**: role and port.
+
+### Tech stack
+Categorised list:
+- **Languages**: ...
+- **Frontend**: ...
+- **Backend**: ...
+- **AI / ML**: ...
+- **DevOps**: Docker, Docker Compose, etc.
+
+### How to run (best guess)
+Setup and run commands in fenced code blocks. List required env vars.
+
+### Key files to read first
+3-5 most important files as:
+- `path/to/file`: Why it matters.
+"""
+
+
+def _build_prompt(state) -> str:
+    def _get(key, default=None):
+        if isinstance(state, dict):
+            return state.get(key, default)
+        return getattr(state, key, default)
+
+    read_files: dict = _get("read_files", {})
+    all_files: list = _get("files", [])
+    insights: list = _get("insights", [])
+    repo_path: str = _get("repo_path", "")
+    project_type: str = _get("project_type") or "Unknown"
+
     files_summary = "\n".join(
         f"- {path}: {len(content.splitlines())} lines"
-        for path, content in state.read_files.items()
+        for path, content in read_files.items()
     )
-    
-    # Include truncated excerpts from file contents to provide actual data for summarization
     file_contents = "\n".join(
         f"### {path}\n{content[:3000]}{'...' if len(content) > 3000 else ''}"
-        for path, content in state.read_files.items()
+        for path, content in read_files.items()
     )
-    
-    # Include top-level directory structure to help infer architecture
-    top_dirs = sorted(set(f.split('/')[0] for f in state.files if '/' in f))
-    dir_structure = f"Top-level directories: {', '.join(top_dirs)}" if top_dirs else "No subdirectories found."
+    top_dirs = sorted({f.split("/")[0] for f in all_files if "/" in f})
+    dir_structure = (
+        f"Top-level directories: {', '.join(top_dirs)}"
+        if top_dirs
+        else "No subdirectories found."
+    )
 
-    prompt = f"""
-You are an AI assistant tasked with summarizing a GitHub repository based on the analysis performed by another agent. Use ONLY the provided data below to generate an accurate, concise README-style summary. Do not invent details, use placeholders, or assume information not present in the data. If a section cannot be determined from the data, state that clearly (e.g., "Not specified in analyzed files").
-
-Repository path: {state.repo_path}
-Project type: {state.project_type}
+    return f"""\
+Repository path: {repo_path}
+Project type: {project_type}
 
 Key observations from analysis:
-{chr(10).join(state.insights)}
+{chr(10).join(insights) or "(none)"}
 
-Files analyzed (with line counts):
-{files_summary}
+Files analysed (with line counts):
+{files_summary or "(none)"}
 
 {dir_structure}
 
-Excerpts from file contents (first 3000 characters each):
-{file_contents}
+Excerpts from file contents (first 3 000 chars each):
+{file_contents or "(no files read)"}
 
-Generate a clean, beautifully structured markdown summary with exactly these sections:
-### What this project does
-Describe the purpose and main functionality based on docs/code in a clear, concise paragraph. If unclear, say "Purpose not clearly defined in analyzed files."
-
-### Architecture
-High-level overview of the system design (e.g., frontend/backend separation, microservices, databases). List individual components as bullet points with their roles and ports (e.g., - **Client**: ..., - **Server**: ..., - **AI Service**: ...). If not evident, say "Architecture not fully clear from analyzed files."
-
-### Tech stack
-Categorized list of technologies:
-- **Languages**: JavaScript, Python, etc.
-- **Frontend**: React, Vite, etc.
-- **Backend**: Node.js, Express, etc.
-- **AI Service**: FastAPI, LangChain, etc.
-- **Orchestration & DevOps**: Docker, Docker Compose, etc.
-
-### How to run (best guess)
-Provide setup/installation and execution commands in fenced code blocks (```bash). If environment variables or secrets are needed, list them clearly. If no clear instructions, say "Run instructions not found; likely requires [language] runtime."
-
-### Key files to read first
-Recommend 3-5 most important files formatted as:
-- `path/to/file`: Brief explanation of its importance.
+{_SUMMARY_SECTIONS}
 """
 
-    return call_llm(prompt, state)
+
+def generate_summary(state) -> str:
+    """Synchronous summary generation (backward-compatible)."""
+    return call_llm(_build_prompt(state), system_prompt=_SUMMARY_SYSTEM)
+
+
+async def generate_summary_async(state) -> str:
+    """Async summary generation used by the LangGraph summarize node."""
+    return await call_llm_async(
+        _build_prompt(state), system_prompt=_SUMMARY_SYSTEM
+    )

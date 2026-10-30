@@ -1,7 +1,7 @@
 [project]
 name = "ai-servises"
-version = "0.1.0"
-description = "Add your description here"
+version = "2.0.0"
+description = "DeployMate AI Services — industrial-grade agent orchestration"
 readme = "README.md"
 authors = [
     { name = "omkar gaikwad", email = "147027748+omkarbg100@users.noreply.github.com" }
@@ -13,9 +13,11 @@ dependencies = [
   "pydantic>=2.10,<3",
   "python-dotenv>=1.0,<2",
   "httpx>=0.28,<1",
-  "langchain-core>=0.3,<1",
-  "langchain-google-genai>=2.0,<5",
-  "langchain-groq>=0.3,<1"
+  "litellm>=1.40,<2",
+  "langgraph>=0.2,<1",
+  "tenacity>=8.2,<10",
+  "prometheus-client>=0.20,<1",
+  "structlog>=24,<25"
 ]
 
 [dependency-groups]
